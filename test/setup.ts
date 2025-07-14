@@ -34,7 +34,7 @@ Object.defineProperty(window, 'location', {
 
 // Mock process.cwd for browser context
 if (typeof process === 'undefined') {
-  (globalThis as any).process = {
+  (globalThis as { process?: { cwd: () => string } }).process = {
     cwd: () => '/home/user'
   }
 }
