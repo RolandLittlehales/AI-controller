@@ -53,19 +53,22 @@ The application uses a unified full-stack architecture with Nuxt 3, providing:
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd ai-agent-manager
+git clone https://github.com/RolandLittlehales/AI-controller.git
+cd AI-controller
 
-# Install dependencies
-npm install
+# Install dependencies (requires pnpm 10.0.0+)
+pnpm install
 
 # Start development server
-npm run dev
+pnpm dev
 ```
+
+For detailed setup instructions, see the [Setup Guide](docs/setup.md).
 
 ## Documentation
 
 Comprehensive documentation is available in the `docs/` directory:
+- [Setup Guide](docs/setup.md) - Development environment setup
 - [Architecture Overview](docs/architecture/architecture-overview.md)
 - [Tech Stack Details](docs/architecture/tech-stack.md)
 - [Implementation Plan](docs/architecture/implementation-plan.md)
