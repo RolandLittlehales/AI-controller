@@ -209,3 +209,116 @@ This is required because node-pty has native bindings that must be compiled for 
 - **Integration Flows**: Component → WebSocket → Service → node-pty
 
 #### IMPORTANT: When asked to "update your learnings", it means update this CLAUDE.md file!
+
+## Code Review & Quality Control Learnings
+
+### Senior Developer Code Review Process (CRITICAL - FOLLOW THIS EXACT WORKFLOW)
+
+When conducting code reviews or implementing quality improvements, follow this comprehensive workflow:
+
+#### 1. Initial Assessment & Planning
+- **Create comprehensive TODO list** using TodoWrite tool to track all improvements
+- **Run parallel quality checks** immediately:
+  - `pnpm lint` - Check ESLint issues
+  - `pnpm typecheck` - Check TypeScript errors  
+  - `pnpm test` - Check test status
+- **Analyze results systematically** - categorize issues by severity and type
+- **Set quality targets**: 0 lint warnings, 0 TypeScript errors, 100% test success, 80%+ coverage
+
+#### 2. Type Safety & Code Quality (HIGH PRIORITY)
+- **Eliminate ALL `any` types** - Replace with proper TypeScript interfaces
+- **Create explicit interfaces** for external libraries (e.g., xterm.js interfaces)
+- **Use proper type casting** with `as unknown as Type` pattern when necessary
+- **Fix browser compatibility** issues (e.g., `process.cwd()` availability checks)
+- **Add missing imports** and resolve auto-import issues
+
+#### 3. Testing Strategy & Implementation
+- **Global Mock Setup**: Use `test/setup.ts` for consistent mocking across all tests
+- **Mock Hierarchy**:
+  - ✅ **DO MOCK**: External APIs (`node-pty`, `@xterm/*`, `WebSocket`, browser APIs)
+  - ❌ **DON'T MOCK**: Internal services, logger, Vue components, business logic
+- **Test Patterns**:
+  - **Integration tests** over unit tests
+  - **User journey testing** (create → use → cleanup)
+  - **Error scenario testing** with real error handling
+  - **Component testing** with minimal stubs
+
+#### 4. Nuxt3 Best Practices
+- **File Organization**: 
+  - `components/` - Reusable Vue components
+  - `server/api/` - API endpoints with proper imports
+  - `server/services/` - Business logic services
+  - `types/` - Type definitions and interfaces
+  - `utils/` - Utility functions
+- **Auto-imports**: Use explicit imports for server APIs if auto-import fails
+- **Type Definitions**: Create global type files (e.g., `types/nitro.d.ts`)
+
+#### 5. Code Review Quality Gates
+**BEFORE COMMITTING - ALL MUST PASS:**
+- ✅ `pnpm lint` - 0 errors, 0 warnings
+- ✅ `pnpm typecheck` - 0 TypeScript errors
+- ✅ `pnpm test` - 100% test success rate
+- ✅ Coverage > 80% (aim for 90%+)
+
+#### 6. KISS & DRY Implementation
+- **KISS (Keep It Simple, Stupid)**:
+  - Simple, clear interfaces over complex abstractions
+  - Explicit types over `any` types
+  - Direct imports over complex auto-import chains
+- **DRY (Don't Repeat Yourself)**:
+  - Global test mocks in `test/setup.ts`
+  - Shared type interfaces in `types/`
+  - Reusable utility functions
+- **WET Tests (Write Everything Twice)**:
+  - Comprehensive test scenarios
+  - Multiple test cases per function
+  - Clear, descriptive test names
+
+#### 7. Error Handling & Logging
+- **Real Logger Integration**: Don't mock logger in tests - let it log for debugging
+- **Proper Error Handling**: Try-catch with detailed error context
+- **Browser Compatibility**: Check for API availability before using
+- **Graceful Degradation**: Fallback values for missing APIs
+
+#### 8. Test Debugging & Fixes
+- **Common Test Issues**:
+  - Mock timing problems → Add `await nextTick()` and timeouts
+  - Component lifecycle issues → Wait for initialization
+  - External library mocks → Use global setup vs individual mocks
+- **Component Test Patterns**:
+  - Mock external libraries in global setup
+  - Test user interactions, not implementation details
+  - Verify real component behavior and events
+
+#### 9. Final Quality Verification
+**The "Golden Standard" Checklist:**
+```bash
+# All must pass with perfect scores
+pnpm lint        # → 0 errors, 0 warnings
+pnpm typecheck   # → 0 TypeScript errors  
+pnpm test        # → 100% test success rate
+pnpm build       # → Successful production build
+```
+
+#### 10. Documentation & Knowledge Transfer
+- **Update CLAUDE.md** with all learnings and process improvements
+- **Document complex patterns** and architectural decisions
+- **Create comprehensive README** sections for setup and troubleshooting
+- **Add inline comments** for complex type casting or workarounds
+
+### Key Quality Insights Learned
+
+1. **Test Setup is Critical**: Global mocks prevent test inconsistencies and flaky failures
+2. **TypeScript Strictness Pays Off**: Proper interfaces catch bugs early and improve maintainability  
+3. **Integration Testing > Unit Testing**: Test user journeys and real component interactions
+4. **Minimal Mocking Philosophy**: Only mock what you absolutely cannot control
+5. **Lint-Driven Development**: Fix lint issues immediately - they indicate deeper problems
+6. **Coverage is a Guide**: Aim for high coverage but focus on meaningful test scenarios
+7. **Browser Compatibility**: Always check API availability in universal/browser code
+8. **Component Testing**: Test behavior and user interactions, not internal implementation
+
+### Code Review Success Metrics
+- **Perfect Quality Score**: 0 lint warnings + 0 TypeScript errors + 100% test success
+- **High Coverage**: >90% code coverage with meaningful tests
+- **Clean Architecture**: KISS/DRY principles followed consistently
+- **Production Ready**: Successful build with no blockers
