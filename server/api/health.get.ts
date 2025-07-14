@@ -1,4 +1,6 @@
-export default defineEventHandler(async (_event: any) => {
+import { defineEventHandler } from 'h3'
+
+export default defineEventHandler(async () => {
   return {
     success: true,
     timestamp: new Date().toISOString(),
@@ -12,5 +14,5 @@ export default defineEventHandler(async (_event: any) => {
       typescript: '5.8.3',
       vue: '3.5.17'
     }
-  }
-})
+  };
+});

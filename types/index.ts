@@ -67,17 +67,17 @@ export interface GitStatus {
 }
 
 export interface WebSocketMessage {
-  type: 'terminal-data' | 'terminal-resize' | 'agent-status' | 'system-notification'
+  type: 'terminal-data' | 'terminal-resize' | 'agent-status' | 'system-notification' | 'terminal-create' | 'terminal-created' | 'terminal-destroy' | 'terminal-destroyed' | 'terminal-exit' | 'error'
   agentId?: string
   terminalId?: string
-  data: any
+  data: Record<string, unknown>
   timestamp: Date
 }
 
 export interface TerminalMessage extends WebSocketMessage {
   type: 'terminal-data'
   data: {
-    output: string
+    output?: string
     input?: string
   }
 }
@@ -103,12 +103,12 @@ export interface SystemNotification extends WebSocketMessage {
   data: {
     level: 'info' | 'warning' | 'error'
     message: string
-    details?: any
+    details?: Record<string, unknown>
   }
 }
 
 // API Response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = Record<string, unknown>> {
   success: boolean
   data?: T
   error?: string
@@ -165,6 +165,12 @@ export interface AppConfig {
   }
 }
 
+// WebSocket types
+export interface WebSocketPeer {
+  send: (data: string) => void
+  close: () => void
+}
+
 // Utility types
 export type CreateAgentInput = Omit<Agent, 'id' | 'createdAt' | 'updatedAt' | 'terminalId' | 'worktreeId'>
 export type UpdateAgentInput = Partial<Pick<Agent, 'name' | 'config' | 'status'>>
@@ -175,19 +181,19 @@ export interface AgentEvent {
   type: 'created' | 'updated' | 'deleted' | 'status_changed'
   agentId: string
   timestamp: Date
-  data: any
+  data: Record<string, unknown>
 }
 
 export interface TerminalEvent {
   type: 'created' | 'destroyed' | 'data' | 'resize'
   terminalId: string
   timestamp: Date
-  data: any
+  data: Record<string, unknown>
 }
 
 export interface WorktreeEvent {
   type: 'created' | 'deleted' | 'switched' | 'status_changed'
   worktreeId: string
   timestamp: Date
-  data: any
+  data: Record<string, unknown>
 }

@@ -59,9 +59,22 @@ cd AI-controller
 # Install dependencies (requires pnpm 10.0.0+)
 pnpm install
 
+# IMPORTANT: Rebuild native bindings for node-pty
+cd node_modules/.pnpm/node-pty@1.0.0/node_modules/node-pty && npm rebuild
+cd -
+
 # Start development server
 pnpm dev
 ```
+
+### Troubleshooting
+
+If you encounter the error `Cannot find module '../build/Release/pty.node'`, you need to rebuild node-pty:
+```bash
+cd node_modules/.pnpm/node-pty@1.0.0/node_modules/node-pty && npm rebuild
+```
+
+**Note:** We use `npm rebuild` here instead of `pnpm rebuild` because node-pty's build scripts specifically expect npm's rebuild behavior for compiling native bindings.
 
 For detailed setup instructions, see the [Setup Guide](docs/setup.md).
 
