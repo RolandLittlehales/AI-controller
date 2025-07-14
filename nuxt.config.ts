@@ -23,7 +23,7 @@ export default defineNuxtConfig({
   // Vite configuration
   vite: {
     plugins: [
-      // @ts-ignore
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       require('@vanilla-extract/vite-plugin').vanillaExtractPlugin()
     ],
     optimizeDeps: {
