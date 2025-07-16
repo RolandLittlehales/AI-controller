@@ -12,7 +12,7 @@ interface WebSocketHandler {
 }
 
 declare global {
-  const defineEventHandler: typeof import('h3').defineEventHandler;
+  const defineEventHandler: typeof import("h3").defineEventHandler;
   const defineWebSocketHandler: (handler: WebSocketHandler) => unknown;
 }
 

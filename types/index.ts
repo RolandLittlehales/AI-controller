@@ -3,7 +3,7 @@
 export interface Agent {
   id: string
   name: string
-  type: 'claude-code' | 'cursor' | 'generic' | 'ai-manager'
+  type: "claude-code" | "cursor" | "generic" | "ai-manager"
   status: AgentStatus
   workingDirectory: string
   worktreeId: string
@@ -24,13 +24,13 @@ export interface AgentConfig {
   timeout: number
 }
 
-export type AgentStatus = 
-  | 'idle'
-  | 'running'
-  | 'stopped'
-  | 'error'
-  | 'restarting'
-  | 'initializing'
+export type AgentStatus =
+  | "idle"
+  | "running"
+  | "stopped"
+  | "error"
+  | "restarting"
+  | "initializing"
 
 export interface Terminal {
   id: string
@@ -67,7 +67,7 @@ export interface GitStatus {
 }
 
 export interface WebSocketMessage {
-  type: 'terminal-data' | 'terminal-resize' | 'agent-status' | 'system-notification' | 'terminal-create' | 'terminal-created' | 'terminal-destroy' | 'terminal-destroyed' | 'terminal-exit' | 'error'
+  type: "terminal-data" | "terminal-resize" | "agent-status" | "system-notification" | "terminal-create" | "terminal-created" | "terminal-destroy" | "terminal-destroyed" | "terminal-exit" | "error"
   agentId?: string
   terminalId?: string
   data: Record<string, unknown>
@@ -75,7 +75,7 @@ export interface WebSocketMessage {
 }
 
 export interface TerminalMessage extends WebSocketMessage {
-  type: 'terminal-data'
+  type: "terminal-data"
   data: {
     output?: string
     input?: string
@@ -83,7 +83,7 @@ export interface TerminalMessage extends WebSocketMessage {
 }
 
 export interface ResizeMessage extends WebSocketMessage {
-  type: 'terminal-resize'
+  type: "terminal-resize"
   data: {
     cols: number
     rows: number
@@ -91,7 +91,7 @@ export interface ResizeMessage extends WebSocketMessage {
 }
 
 export interface AgentStatusMessage extends WebSocketMessage {
-  type: 'agent-status'
+  type: "agent-status"
   data: {
     status: AgentStatus
     message?: string
@@ -99,9 +99,9 @@ export interface AgentStatusMessage extends WebSocketMessage {
 }
 
 export interface SystemNotification extends WebSocketMessage {
-  type: 'system-notification'
+  type: "system-notification"
   data: {
-    level: 'info' | 'warning' | 'error'
+    level: "info" | "warning" | "error"
     message: string
     details?: Record<string, unknown>
   }
@@ -172,27 +172,27 @@ export interface WebSocketPeer {
 }
 
 // Utility types
-export type CreateAgentInput = Omit<Agent, 'id' | 'createdAt' | 'updatedAt' | 'terminalId' | 'worktreeId'>
-export type UpdateAgentInput = Partial<Pick<Agent, 'name' | 'config' | 'status'>>
-export type CreateWorktreeInput = Omit<Worktree, 'id' | 'createdAt' | 'lastUsed'>
+export type CreateAgentInput = Omit<Agent, "id" | "createdAt" | "updatedAt" | "terminalId" | "worktreeId">
+export type UpdateAgentInput = Partial<Pick<Agent, "name" | "config" | "status">>
+export type CreateWorktreeInput = Omit<Worktree, "id" | "createdAt" | "lastUsed">
 
 // Event types
 export interface AgentEvent {
-  type: 'created' | 'updated' | 'deleted' | 'status_changed'
+  type: "created" | "updated" | "deleted" | "status_changed"
   agentId: string
   timestamp: Date
   data: Record<string, unknown>
 }
 
 export interface TerminalEvent {
-  type: 'created' | 'destroyed' | 'data' | 'resize'
+  type: "created" | "destroyed" | "data" | "resize"
   terminalId: string
   timestamp: Date
   data: Record<string, unknown>
 }
 
 export interface WorktreeEvent {
-  type: 'created' | 'deleted' | 'switched' | 'status_changed'
+  type: "created" | "deleted" | "switched" | "status_changed"
   worktreeId: string
   timestamp: Date
   data: Record<string, unknown>
