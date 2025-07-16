@@ -253,6 +253,24 @@ pnpm build       # Successful production build
 - **SOLID Principles**: Object-oriented code SHOULD follow SOLID principles
 - **Single Responsibility**: Functions and classes SHOULD have a single, clear purpose
 
+### 9.2 KISS Principle Implementation Guidelines
+
+When applying KISS principles to code simplification:
+
+**✅ DO:**
+- Simplify implementation complexity while preserving exact visual appearance
+- Remove unnecessary code that doesn't affect functionality
+- Use direct approaches instead of overly complex abstractions
+- Test visual changes with browser/playwright to ensure no regressions
+
+**❌ DON'T:**
+- Change visual design when asked to simplify code complexity
+- Remove CSS classes without verifying template usage
+- Conflate code simplification with design changes
+- Assume "simplify" means "change how it looks"
+
+**Key Insight:** "Simplify" means easier to maintain code, not different visual appearance
+
 ### Refactoring Indicators
 
 Code MUST be refactored when:

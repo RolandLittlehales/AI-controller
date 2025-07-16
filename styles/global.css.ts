@@ -35,8 +35,8 @@ globalStyle("*:focus-visible", {
 
 // Scrollbar styles
 globalStyle("::-webkit-scrollbar", {
-  width: "8px",
-  height: "8px",
+  width: theme.scrollbar.width,
+  height: theme.scrollbar.width,
 });
 
 globalStyle("::-webkit-scrollbar-track", {

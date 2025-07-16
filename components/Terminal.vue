@@ -48,6 +48,7 @@
 import { ref, onMounted, onUnmounted, nextTick, readonly } from "vue";
 import type { WebSocketMessage, TerminalMessage } from "~/types";
 import { logger } from "~/utils/logger";
+import "@xterm/xterm/css/xterm.css";
 // Simplified type definitions for xterm.js integration
 interface XTerminalConstructor {
   new (config: XTermOptions): XTerminalInstance;
@@ -229,6 +230,11 @@ async function initializeTerminal() {
     // Fit terminal to container
     await nextTick();
     fitAddon.value?.fit();
+
+    // Allow CSS to apply, then fit again to ensure proper scrollbar space
+    setTimeout(() => {
+      fitAddon.value?.fit();
+    }, 100);
 
     // Focus terminal after initialization
     terminal.value.focus();
@@ -430,11 +436,13 @@ defineExpose({
 .terminal-container {
   display: flex;
   flex-direction: column;
+  width: 100%;
   height: 100%;
   background-color: var(--terminal-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  --scrollbar-width: 8px;
 }
 
 .terminal-header {
@@ -540,62 +548,10 @@ defineExpose({
   pointer-events: none;
 }
 
-/* Hide xterm helper elements visually but keep them functional */
-.terminal-content :deep(.xterm-helpers) {
-  opacity: 0 !important;
-  position: absolute !important;
-  left: -9999px !important;
-  top: -9999px !important;
-  z-index: -1 !important;
+/* Ensure xterm container leaves room for scrollbar */
+:deep(.xterm-screen),
+:deep(.xterm-rows) {
+  width: calc(100% - var(--scrollbar-width)) !important;
 }
 
-.terminal-content :deep(.xterm-helper-textarea) {
-  opacity: 0 !important;
-  position: absolute !important;
-  left: -9999px !important;
-  top: -9999px !important;
-  z-index: -1 !important;
-  /* Keep it functional for keyboard input */
-}
-
-/* Ensure terminal fills the container */
-.terminal-content :deep(.xterm) {
-  height: 100%;
-  padding: 0;
-}
-
-.terminal-content :deep(.xterm-screen) {
-  height: 100%;
-}
-
-/* Hide scrollbars in terminal */
-.terminal-content :deep(.xterm-viewport) {
-  scrollbar-width: thin;
-  scrollbar-color: #666 #1e1e1e;
-  height: 100% !important;
-}
-
-/* Constrain xterm scroll area height to prevent infinite growth */
-.terminal-content :deep(.xterm-scroll-area) {
-  max-height: 100% !important;
-  height: 100% !important;
-  overflow: hidden !important;
-}
-
-.terminal-content :deep(.xterm-viewport::-webkit-scrollbar) {
-  width: 8px;
-}
-
-.terminal-content :deep(.xterm-viewport::-webkit-scrollbar-track) {
-  background: #1e1e1e;
-}
-
-.terminal-content :deep(.xterm-viewport::-webkit-scrollbar-thumb) {
-  background: #666;
-  border-radius: 4px;
-}
-
-.terminal-content :deep(.xterm-viewport::-webkit-scrollbar-thumb:hover) {
-  background: #888;
-}
 </style>
