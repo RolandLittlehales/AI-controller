@@ -17,7 +17,16 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "baseUrl": ".",
+    "paths": {
+      "~/*": [
+        "./*"
+      ],
+      "@/*": [
+        "./*"
+      ]
+    }
   },
   "include": [
     "**/*.ts",
@@ -26,7 +35,13 @@
     "**/*.js",
     "**/*.jsx",
     "**/*.mjs",
-    "**/*.json"
+    "**/*.json",
+    "types",
+    "components",
+    "pages",
+    "composables",
+    "app.vue",
+    "nuxt.config.ts"
   ],
   "exclude": [
     "node_modules",

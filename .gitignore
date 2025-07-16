@@ -175,3 +175,28 @@ temp/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Binary files and installers (prevent large files in git history)
+*.deb
+*.dmg
+*.exe
+*.msi
+*.pkg
+*.rpm
+*.appimage
+google-chrome-stable*
+firefox-*.tar.bz2
+*.zip
+*.tar.gz
+*.tar.bz2
+*.rar
+*.7z
+
+# Large media files
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.mp3
+*.wav
+*.flac

@@ -8,7 +8,7 @@
     <main class="main">
       <div class="welcome-section">
         <h2 class="welcome-title">🚀 Welcome to AI Agent Manager</h2>
-        
+
         <div class="features">
           <p class="features-text">This application helps you manage multiple CLI-based AI tools with:</p>
           <ul class="features-list">
@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import Terminal from '~/components/Terminal.vue'
+import Terminal from "~/components/Terminal.vue";
 </script>
 
 <style scoped>
@@ -53,100 +53,105 @@ import Terminal from '~/components/Terminal.vue'
   display: flex;
   flex-direction: column;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-color: #f9fafb;
-  color: #111827;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
 }
 
 .header {
-  padding: 2rem 1.5rem;
+  padding: var(--spacing-2xl) var(--spacing-xl);
   text-align: center;
-  background-color: white;
-  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-secondary) 100%);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .header-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  color: #1f2937;
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-primary);
 }
 
 .header-subtitle {
-  font-size: 1.125rem;
-  color: #6b7280;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
 }
 
 .main {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 2rem 1.5rem;
-  gap: 2rem;
+  padding: var(--spacing-2xl) var(--spacing-xl);
+  gap: var(--spacing-2xl);
 }
 
 .welcome-section {
   max-width: 600px;
   margin: 0 auto;
   text-align: center;
-  background-color: white;
-  padding: 3rem 2rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-surface);
+  padding: var(--spacing-3xl) var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border-light);
 }
 
 .welcome-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 2rem;
-  color: #1f2937;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-2xl);
+  color: var(--color-text-primary);
 }
 
 .features {
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-2xl);
   text-align: left;
 }
 
 .features-text {
-  margin-bottom: 1rem;
-  color: #374151;
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-text-secondary);
 }
 
 .features-list {
   list-style-type: disc;
-  margin-left: 2rem;
-  color: #374151;
+  margin-left: var(--spacing-2xl);
+  color: var(--color-text-secondary);
 }
 
 .features-list-item {
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--spacing-sm);
 }
 
 .status {
-  font-size: 0.875rem;
-  color: #6b7280;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
 }
 
 .status-ready {
-  color: #059669;
-  font-weight: 600;
+  color: var(--color-success);
+  font-weight: var(--font-weight-semibold);
 }
 
 .terminal-section {
   flex: 1;
-  min-height: 400px;
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  min-height: 600px;
+  height: 600px;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border-light);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .footer {
-  padding: 1rem 1.5rem;
+  padding: var(--spacing-lg) var(--spacing-xl);
   text-align: center;
-  font-size: 0.875rem;
-  color: #6b7280;
-  background-color: white;
-  border-top: 1px solid #e5e7eb;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-secondary) 100%);
+  border-top: 1px solid var(--color-border);
 }
 
 .terminal-loading {
@@ -154,7 +159,7 @@ import Terminal from '~/components/Terminal.vue'
   align-items: center;
   justify-content: center;
   height: 400px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-style: italic;
 }
 </style>

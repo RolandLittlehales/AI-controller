@@ -1,7 +1,7 @@
 // WebSocket handler - auto-imported by Nitro
-import type { WebSocketMessage, TerminalMessage, ResizeMessage, WebSocketPeer } from '~/types';
-import { terminalService } from '~/server/services/terminal';
-import { logger } from '~/utils/logger';
+import type { WebSocketMessage, TerminalMessage, ResizeMessage, WebSocketPeer } from "~/types";
+import { terminalService } from "~/server/services/terminal";
+import { logger } from "~/utils/logger";
 
 // Store WebSocket peers for each terminal
 const terminalPeers = new Map<string, WebSocketPeer>();
@@ -12,33 +12,33 @@ export default defineWebSocketHandler({
       const data = JSON.parse(message.toString()) as WebSocketMessage;
 
       switch (data.type) {
-        case 'terminal-create':
+        case "terminal-create":
           await handleTerminalCreate(peer, data);
           break;
 
-        case 'terminal-data':
+        case "terminal-data":
           await handleTerminalInput(peer, data as TerminalMessage);
           break;
 
-        case 'terminal-resize':
+        case "terminal-resize":
           await handleTerminalResize(peer, data as ResizeMessage);
           break;
 
-        case 'terminal-destroy':
+        case "terminal-destroy":
           await handleTerminalDestroy(peer, data);
           break;
 
         default:
           peer.send(JSON.stringify({
-            type: 'error',
-            data: { message: `Unknown message type: ${data.type}` }
+            type: "error",
+            data: { message: `Unknown message type: ${data.type}` },
           }));
       }
     } catch (error) {
-      logger.error('WebSocket message processing failed', error, { handler: 'terminal-ws' });
+      logger.error("WebSocket message processing failed", error, { handler: "terminal-ws" });
       peer.send(JSON.stringify({
-        type: 'error',
-        data: { message: 'Invalid message format' }
+        type: "error",
+        data: { message: "Invalid message format" },
       }));
     }
   },
@@ -51,7 +51,7 @@ export default defineWebSocketHandler({
         terminalPeers.delete(terminalId);
       }
     }
-  }
+  },
 });
 
 async function handleTerminalCreate(peer: WebSocketPeer, data: WebSocketMessage) {
@@ -65,7 +65,7 @@ async function handleTerminalCreate(peer: WebSocketPeer, data: WebSocketMessage)
     const terminalInstance = await terminalService.createTerminal({
       cols: colsNum,
       rows: rowsNum,
-      cwd: cwdStr
+      cwd: cwdStr,
     });
 
     // Store peer for this terminal
@@ -76,19 +76,19 @@ async function handleTerminalCreate(peer: WebSocketPeer, data: WebSocketMessage)
       if (terminalPeers.has(terminalInstance.id)) {
         const peer = terminalPeers.get(terminalInstance.id);
 
-        if (eventData.type === 'data') {
+        if (eventData.type === "data") {
           peer?.send(JSON.stringify({
-            type: 'terminal-data',
+            type: "terminal-data",
             terminalId: terminalInstance.id,
             data: { output: eventData.data.output },
-            timestamp: eventData.timestamp
+            timestamp: eventData.timestamp,
           }));
-        } else if (eventData.type === 'exit') {
+        } else if (eventData.type === "exit") {
           peer?.send(JSON.stringify({
-            type: 'terminal-exit',
+            type: "terminal-exit",
             terminalId: terminalInstance.id,
             data: eventData.data,
-            timestamp: eventData.timestamp
+            timestamp: eventData.timestamp,
           }));
           // Cleanup will be handled automatically by TerminalService
           terminalPeers.delete(terminalInstance.id);
@@ -98,22 +98,22 @@ async function handleTerminalCreate(peer: WebSocketPeer, data: WebSocketMessage)
 
     // Send success response
     peer.send(JSON.stringify({
-      type: 'terminal-created',
+      type: "terminal-created",
       terminalId: terminalInstance.id,
       data: {
         pid: terminalInstance.pty.pid,
         cols: terminalInstance.metadata.cols,
         rows: terminalInstance.metadata.rows,
-        cwd: terminalInstance.metadata.cwd
+        cwd: terminalInstance.metadata.cwd,
       },
-      timestamp: new Date()
+      timestamp: new Date(),
     }));
 
   } catch (error) {
-    logger.error('Terminal creation failed', error, { handler: 'terminal-create' });
+    logger.error("Terminal creation failed", error, { handler: "terminal-create" });
     peer.send(JSON.stringify({
-      type: 'error',
-      data: { message: 'Failed to create terminal' }
+      type: "error",
+      data: { message: "Failed to create terminal" },
     }));
   }
 }
@@ -124,8 +124,8 @@ async function handleTerminalInput(peer: WebSocketPeer, data: TerminalMessage) {
 
   if (!terminalId || !input) {
     peer.send(JSON.stringify({
-      type: 'error',
-      data: { message: 'Terminal ID and input are required' }
+      type: "error",
+      data: { message: "Terminal ID and input are required" },
     }));
     return;
   }
@@ -133,8 +133,8 @@ async function handleTerminalInput(peer: WebSocketPeer, data: TerminalMessage) {
   const success = terminalService.writeToTerminal(terminalId, input);
   if (!success) {
     peer.send(JSON.stringify({
-      type: 'error',
-      data: { message: 'Failed to write to terminal' }
+      type: "error",
+      data: { message: "Failed to write to terminal" },
     }));
   }
 }
@@ -145,8 +145,8 @@ async function handleTerminalResize(peer: WebSocketPeer, data: ResizeMessage) {
 
   if (!terminalId || !cols || !rows) {
     peer.send(JSON.stringify({
-      type: 'error',
-      data: { message: 'Terminal ID, cols, and rows are required' }
+      type: "error",
+      data: { message: "Terminal ID, cols, and rows are required" },
     }));
     return;
   }
@@ -154,8 +154,8 @@ async function handleTerminalResize(peer: WebSocketPeer, data: ResizeMessage) {
   const success = terminalService.resizeTerminal(terminalId, cols, rows);
   if (!success) {
     peer.send(JSON.stringify({
-      type: 'error',
-      data: { message: 'Failed to resize terminal' }
+      type: "error",
+      data: { message: "Failed to resize terminal" },
     }));
   }
 }
@@ -165,8 +165,8 @@ async function handleTerminalDestroy(peer: WebSocketPeer, data: WebSocketMessage
 
   if (!terminalId) {
     peer.send(JSON.stringify({
-      type: 'error',
-      data: { message: 'Terminal ID is required' }
+      type: "error",
+      data: { message: "Terminal ID is required" },
     }));
     return;
   }
@@ -176,14 +176,14 @@ async function handleTerminalDestroy(peer: WebSocketPeer, data: WebSocketMessage
 
   if (success) {
     peer.send(JSON.stringify({
-      type: 'terminal-destroyed',
+      type: "terminal-destroyed",
       terminalId,
-      timestamp: new Date()
+      timestamp: new Date(),
     }));
   } else {
     peer.send(JSON.stringify({
-      type: 'error',
-      data: { message: 'Failed to destroy terminal' }
+      type: "error",
+      data: { message: "Failed to destroy terminal" },
     }));
   }
 }

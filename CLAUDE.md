@@ -317,8 +317,76 @@ pnpm build       # → Successful production build
 7. **Browser Compatibility**: Always check API availability in universal/browser code
 8. **Component Testing**: Test behavior and user interactions, not internal implementation
 
+### UI/UX Development & Theming Best Practices
+
+#### CSS Architecture & Design System Implementation
+9. **Plan CSS Architecture First**: Design the theme system hierarchy upfront before implementation
+   - Base theme → System preference → Manual override
+   - Consider CSS specificity conflicts early
+   - Map out how different theme sources interact
+
+10. **Never Use `!important` for Theming**: Proper CSS specificity is always the correct solution
+    - Use `:not()` selectors to prevent conflicts: `@media (prefers-color-scheme: dark) { :root:not(.light-theme) { ... } }`
+    - Manual theme classes should have higher specificity than media queries
+    - Structure CSS to naturally cascade without forcing
+
+11. **Test Functionality Immediately**: Don't assume template logic equals working features
+    - Test theme toggles actually change visual appearance, not just text
+    - Verify CSS variables are properly overridden
+    - Check both light and dark modes in different system preference scenarios
+
+12. **CSS Variables Best Practices**:
+    - Create comprehensive variable systems for typography, spacing, colors, transitions
+    - Convert ALL hardcoded values to variables for consistency
+    - Organize variables logically: base palette → semantic colors → component-specific
+
+13. **Design System Organization**:
+    - Create showcase pages (/design-system) to demonstrate all variables and components
+    - Build theme testing pages (/theme-test) with manual toggles for QA
+    - Move test content from HTML files to proper Vue components in pages directory
+
+#### Terminal UI Specific Learnings
+14. **xterm.js Integration**: Hide helper elements visually while preserving functionality
+    - Use `opacity: 0` and `position: absolute` with negative positioning instead of `display: none`
+    - Preserve keyboard input functionality by keeping elements in DOM
+    - Terminal should maintain dark theme for optimal readability regardless of site theme
+
+15. **Component Color Theory**: Apply semantic color meanings consistently
+    - Disconnect buttons should not be red (not an error) - use theme colors instead
+    - Use appropriate icons (X mark for disconnect, not stop circle)
+    - Maintain visual hierarchy through color contrast
+
+#### Git & Branch Management for UI Work
+16. **Branch Hygiene & Large File Prevention**: Prevent large files from entering git history
+    - **Use .gitignore proactively** for all binaries, installers, and large files (*.deb, *.dmg, *.exe, etc.)
+    - Add patterns like `*.deb`, `google-chrome-stable*`, browser installers to .gitignore immediately
+    - Much easier to prevent than to clean up git history after large files are committed
+    - Remove large files (like browser installers) before they get committed if .gitignore missed them
+    - Use git cherry-pick carefully to avoid bringing unwanted history
+    - Create clean branches from main when git history gets polluted
+
+17. **Quality Gates for UI Work**: All must pass before PR creation
+    - ✅ ESLint: 0 errors, 0 warnings (auto-fix attribute ordering)
+    - ✅ TypeScript: 0 compilation errors
+    - ✅ Tests: 100% success rate with meaningful coverage
+    - ✅ Visual verification: Actually test UI changes work as intended
+
+#### Progressive Enhancement & Accessibility
+18. **System Integration**: Respect user preferences while allowing manual control
+    - Use `prefers-color-scheme` for automatic theme detection
+    - Provide manual override capabilities
+    - Show current system preference in UI for transparency
+
+19. **Best Practices Mindset**: Always think "would this pass a senior developer's code review?"
+    - Plan architecture before implementation
+    - Avoid quick fixes that create technical debt
+    - Test functionality immediately, don't assume logic equals working features
+    - Use proper CSS patterns instead of forcing with anti-patterns
+
 ### Code Review Success Metrics
 - **Perfect Quality Score**: 0 lint warnings + 0 TypeScript errors + 100% test success
 - **High Coverage**: >90% code coverage with meaningful tests
 - **Clean Architecture**: KISS/DRY principles followed consistently
 - **Production Ready**: Successful build with no blockers
+- **UI/UX Verification**: Manual testing confirms visual changes work as designed
+- **No CSS Anti-patterns**: No `!important`, proper specificity, semantic color usage

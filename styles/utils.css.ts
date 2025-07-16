@@ -1,41 +1,41 @@
-import { style } from '@vanilla-extract/css'
-import { theme } from './theme.css'
+import { style } from "@vanilla-extract/css";
+import { theme } from "./theme.css";
 
 // Layout utilities
 export const flexCenter = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-})
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+});
 
 export const flexBetween = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-})
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+});
 
 export const flexCol = style({
-  display: 'flex',
-  flexDirection: 'column',
-})
+  display: "flex",
+  flexDirection: "column",
+});
 
 export const flexRow = style({
-  display: 'flex',
-  flexDirection: 'row',
-})
+  display: "flex",
+  flexDirection: "row",
+});
 
 export const fullHeight = style({
-  height: '100%',
-})
+  height: "100%",
+});
 
 export const fullWidth = style({
-  width: '100%',
-})
+  width: "100%",
+});
 
 export const fullSize = style({
-  width: '100%',
-  height: '100%',
-})
+  width: "100%",
+  height: "100%",
+});
 
 // Spacing utilities
 export const spacing = {
@@ -81,7 +81,7 @@ export const spacing = {
     lg: style({ paddingTop: theme.spacing.lg, paddingBottom: theme.spacing.lg }),
     xl: style({ paddingTop: theme.spacing.xl, paddingBottom: theme.spacing.xl }),
   },
-}
+};
 
 // Text utilities
 export const textStyles = {
@@ -90,10 +90,10 @@ export const textStyles = {
   base: style({ fontSize: theme.typography.fontSize.base }),
   lg: style({ fontSize: theme.typography.fontSize.lg }),
   xl: style({ fontSize: theme.typography.fontSize.xl }),
-  '2xl': style({ fontSize: theme.typography.fontSize['2xl'] }),
-  '3xl': style({ fontSize: theme.typography.fontSize['3xl'] }),
-  '4xl': style({ fontSize: theme.typography.fontSize['4xl'] }),
-}
+  "2xl": style({ fontSize: theme.typography.fontSize["2xl"] }),
+  "3xl": style({ fontSize: theme.typography.fontSize["3xl"] }),
+  "4xl": style({ fontSize: theme.typography.fontSize["4xl"] }),
+};
 
 export const fontWeight = {
   light: style({ fontWeight: theme.typography.fontWeight.light }),
@@ -101,7 +101,7 @@ export const fontWeight = {
   medium: style({ fontWeight: theme.typography.fontWeight.medium }),
   semibold: style({ fontWeight: theme.typography.fontWeight.semibold }),
   bold: style({ fontWeight: theme.typography.fontWeight.bold }),
-}
+};
 
 // Border utilities
 export const rounded = {
@@ -110,9 +110,9 @@ export const rounded = {
   md: style({ borderRadius: theme.borderRadius.md }),
   lg: style({ borderRadius: theme.borderRadius.lg }),
   xl: style({ borderRadius: theme.borderRadius.xl }),
-  '2xl': style({ borderRadius: theme.borderRadius['2xl'] }),
+  "2xl": style({ borderRadius: theme.borderRadius["2xl"] }),
   full: style({ borderRadius: theme.borderRadius.full }),
-}
+};
 
 // Shadow utilities
 export const shadow = {
@@ -120,7 +120,7 @@ export const shadow = {
   md: style({ boxShadow: theme.shadows.md }),
   lg: style({ boxShadow: theme.shadows.lg }),
   xl: style({ boxShadow: theme.shadows.xl }),
-}
+};
 
 // Color utilities
 export const bg = {
@@ -129,9 +129,9 @@ export const bg = {
   success: style({ backgroundColor: theme.colors.success[500] }),
   warning: style({ backgroundColor: theme.colors.warning[500] }),
   error: style({ backgroundColor: theme.colors.error[500] }),
-  white: style({ backgroundColor: '#ffffff' }),
-  transparent: style({ backgroundColor: 'transparent' }),
-}
+  white: style({ backgroundColor: "#ffffff" }),
+  transparent: style({ backgroundColor: "transparent" }),
+};
 
 export const text = {
   primary: style({ color: theme.colors.primary[500] }),
@@ -139,38 +139,38 @@ export const text = {
   success: style({ color: theme.colors.success[500] }),
   warning: style({ color: theme.colors.warning[500] }),
   error: style({ color: theme.colors.error[500] }),
-  white: style({ color: '#ffffff' }),
+  white: style({ color: "#ffffff" }),
   muted: style({ color: theme.colors.gray[500] }),
-}
+};
 
 // Interactive utilities
 export const hover = {
   opacity: style({
-    transition: 'opacity 0.2s ease',
-    ':hover': {
+    transition: "opacity 0.2s ease",
+    ":hover": {
       opacity: 0.8,
     },
   }),
   scale: style({
-    transition: 'transform 0.2s ease',
-    ':hover': {
-      transform: 'scale(1.05)',
+    transition: "transform 0.2s ease",
+    ":hover": {
+      transform: "scale(1.05)",
     },
   }),
-}
+};
 
 // Animation utilities
 export const transition = {
   all: style({
-    transition: 'all 0.2s ease',
+    transition: "all 0.2s ease",
   }),
   colors: style({
-    transition: 'background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease',
+    transition: "background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease",
   }),
   opacity: style({
-    transition: 'opacity 0.2s ease',
+    transition: "opacity 0.2s ease",
   }),
   transform: style({
-    transition: 'transform 0.2s ease',
+    transition: "transform 0.2s ease",
   }),
-}
+};
