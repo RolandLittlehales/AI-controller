@@ -122,6 +122,7 @@ const terminalRef = ref<HTMLDivElement>();
 const terminal = ref<XTerminalInstance>();
 const fitAddon = ref<XTermFitAddon>();
 const webLinksAddon = ref<XTermWebLinksAddon>();
+const resizeObserver = ref<ResizeObserver>();
 
 // Connection state
 const ws = ref<WebSocket>();
@@ -231,10 +232,15 @@ async function initializeTerminal() {
     await nextTick();
     fitAddon.value?.fit();
 
-    // Allow CSS to apply, then fit again to ensure proper scrollbar space
-    setTimeout(() => {
-      fitAddon.value?.fit();
-    }, 100);
+    // Set up ResizeObserver to handle container size changes
+    resizeObserver.value = new ResizeObserver(() => {
+      if (fitAddon.value && terminal.value) {
+        fitAddon.value.fit();
+      }
+    });
+
+    // Observe the terminal container for size changes
+    resizeObserver.value.observe(terminalRef.value);
 
     // Focus terminal after initialization
     terminal.value.focus();
@@ -409,6 +415,11 @@ function cleanup() {
     terminal.value = undefined;
   }
 
+  if (resizeObserver.value) {
+    resizeObserver.value.disconnect();
+    resizeObserver.value = undefined;
+  }
+
   window.removeEventListener("resize", handleWindowResize);
 
   isConnected.value = false;
@@ -548,7 +559,11 @@ defineExpose({
   pointer-events: none;
 }
 
-/* Ensure xterm container leaves room for scrollbar */
+/* Ensure xterm container leaves room for scrollbar
+ * This reserves space for the terminal's vertical scrollbar to prevent content
+ * from being hidden underneath it. The scrollbar width is subtracted from the
+ * total width so text doesn't get cut off when the scrollbar appears.
+ */
 :deep(.xterm-screen),
 :deep(.xterm-rows) {
   width: calc(100% - var(--scrollbar-width)) !important;
