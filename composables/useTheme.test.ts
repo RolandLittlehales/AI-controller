@@ -13,7 +13,7 @@ vi.mock("nuxt/app", () => ({
 }));
 
 describe("useTheme", () => {
-  let mockMatchMedia: vi.MockedFunction<(query: string) => MediaQueryList>;
+  let mockMatchMedia: ReturnType<typeof vi.fn>;
   let originalWindow: typeof window;
 
   beforeEach(() => {
