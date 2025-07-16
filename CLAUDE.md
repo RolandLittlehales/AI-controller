@@ -8,45 +8,6 @@ AI-controller is a web application designed to manage multiple terminal-based AI
 
 ## Current State
 
-As of current development, the project has significant implementation progress:
-
-### ✅ Completed (Phase 1.1 - Project Setup)
-- **Full Nuxt 3 project** with TypeScript configuration
-- **Technology stack** implemented:
-  - Nuxt 3.17.7 with Vue 3.5.17
-  - TypeScript with strict mode
-  - Nuxt UI 3.2.0 for components
-  - Pinia for state management
-  - Vanilla Extract for styling
-  - ESLint + Prettier for code quality
-  - xterm.js with addons for terminal functionality
-  - node-pty for terminal backend
-  - Socket.IO for WebSocket communication
-  - Winston for logging
-  - simple-git for Git operations
-
-### ✅ Completed (Phase 1.2 - Basic Terminal Integration)
-- **Terminal.vue component** with xterm.js integration
-- **Terminal service** with node-pty backend
-- **WebSocket communication** via Socket.IO for terminal I/O
-- **Terminal lifecycle management** (spawn, destroy) implemented
-- **Real-time terminal** input/output working
-- **Basic terminal styling** with Nuxt UI components
-
-### ✅ Build & Development Environment
-- **Package scripts**: dev, build, lint, typecheck, preview
-- **ESLint configuration** with Vue and TypeScript support
-- **Project structure** with proper folder organization
-- **Nitro API** with WebSocket support enabled
-- **Type definitions** and interfaces defined
-
-### ✅ Completed (Phase 1.2 - Basic Terminal Integration)
-- **Fixed type errors** in Terminal.vue component
-- **Added readonly utility** import from Vue
-- **Aligned WebSocket message types** between frontend and backend
-- **Added comprehensive tests** for terminal functionality
-- **Fixed node-pty native bindings** issue
-
 ### 📁 Project Structure
 ```
 /
@@ -61,12 +22,6 @@ As of current development, the project has significant implementation progress:
 ├── layouts/default.vue             # Default layout
 └── nuxt.config.ts                  # Nuxt configuration
 ```
-
-### 🚀 Ready for Phase 1.3
-The project is ready to move to Phase 1.3 (Core API Development) with:
-- Terminal WebSocket communication working
-- Basic terminal functionality implemented
-- Solid foundation for API expansion
 
 ## Development Workflow
 
@@ -83,6 +38,7 @@ When starting any new development work, follow this essential workflow:
 - Understand the context and impact of the proposed changes
 
 ### 3. Solution Design
+- **Reference development standards**: Check `docs/standards/` for applicable patterns before designing
 - Brainstorm multiple different solutions that would best fit the requirements
 - Keep solutions **KISS** (Keep It Simple, Stupid) and **DRY** (Don't Repeat Yourself)
 - Note: Tests should be **WET** (Write Everything Twice) for clarity and comprehensiveness
@@ -97,9 +53,11 @@ When starting any new development work, follow this essential workflow:
 - Don't settle for "good enough" - aim for the right solution
 
 ### 5. Implementation Process
+- **Follow development standards**: Reference `docs/standards/` for all implementation patterns
 - Build, test, and check types continuously as you implement
 - Run tests and builds at every **main milestone** of the work
 - Perform **sanity checks every 30 minutes**: test, types, verify you're on the correct path
+- **Ensure standards compliance**: Check against `docs/standards/README.md` checklist
 - Ensure adherence to KISS, DRY/WET principles throughout
 
 ### 6. Final Review
@@ -210,6 +168,37 @@ This is required because node-pty has native bindings that must be compiled for 
 
 #### IMPORTANT: When asked to "update your learnings", it means update this CLAUDE.md file!
 
+## Development Standards (CRITICAL - FOLLOW THESE STANDARDS)
+
+This project uses comprehensive RFC 2119-compliant development standards located in `docs/standards/`. These standards MUST be followed for all development work.
+
+### 📋 Standards Reference
+- **CSS/Styling Standards** (`docs/standards/css-styling.md`): MUST use vanilla-extract as primary CSS system
+- **TypeScript Standards** (`docs/standards/typescript.md`): MUST maintain zero `any` tolerance and strict type safety
+- **Testing Standards** (`docs/standards/testing.md`): MUST follow minimal mocking philosophy and integration testing
+- **Component Standards** (`docs/standards/components.md`): MUST use Vue 3 Composition API with proper TypeScript integration
+- **API/Server Standards** (`docs/standards/api-server.md`): MUST follow Nitro patterns with comprehensive error handling
+- **Documentation Standards** (`docs/standards/documentation.md`): MUST maintain comprehensive documentation
+- **Code Quality Standards** (`docs/standards/code-quality.md`): MUST pass all quality gates before commit
+
+### 🔧 Key Standards Summary
+- **MUST use vanilla-extract** for all CSS (no scoped styles except during migration)
+- **MUST eliminate all `any` types** - use proper TypeScript interfaces
+- **MUST achieve 80% test coverage** with integration-focused testing
+- **MUST mock only external dependencies** (node-pty, @xterm/*, WebSocket, browser APIs)
+- **MUST follow Vue 3 Composition API** patterns with proper lifecycle management
+- **MUST use comprehensive error handling** with structured logging
+- **MUST pass quality gates**: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`
+
+### 📖 Standards Compliance
+Before any commit, verify compliance with: `docs/standards/README.md#standards-compliance-checklist`
+
+#### IMPORTANT: Standards Integration
+- **When writing code**: Reference appropriate standards document first
+- **When reviewing code**: Use standards as checklist for approval
+- **When updating standards**: Update this CLAUDE.md file with key changes
+- **When asked to "update your learnings"**: Update both this file and relevant standards
+
 ## Code Review & Quality Control Learnings
 
 ### Senior Developer Code Review Process (CRITICAL - FOLLOW THIS EXACT WORKFLOW)
@@ -254,11 +243,12 @@ When conducting code reviews or implementing quality improvements, follow this c
 - **Type Definitions**: Create global type files (e.g., `types/nitro.d.ts`)
 
 #### 5. Code Review Quality Gates
-**BEFORE COMMITTING - ALL MUST PASS:**
+**BEFORE COMMITTING - ALL MUST PASS (see docs/standards/code-quality.md):**
 - ✅ `pnpm lint` - 0 errors, 0 warnings
 - ✅ `pnpm typecheck` - 0 TypeScript errors
 - ✅ `pnpm test` - 100% test success rate
 - ✅ Coverage > 80% (aim for 90%+)
+- ✅ **Standards compliance**: Follow `docs/standards/README.md` checklist
 
 #### 6. KISS & DRY Implementation
 - **KISS (Keep It Simple, Stupid)**:
