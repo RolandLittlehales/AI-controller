@@ -7,6 +7,9 @@ export default defineConfig({
     environment: "happy-dom",
     globals: true,
     setupFiles: ["./test/setup.ts"],
+    typecheck: {
+      tsconfig: "./tsconfig.json",
+    },
     include: ["**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     exclude: ["node_modules/**", "dist/**", ".nuxt/**", ".output/**"],
     coverage: {

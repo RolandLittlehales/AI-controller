@@ -289,6 +289,9 @@ When integrating external libraries, components MUST:
 For xterm.js integration (reference pattern):
 
 ```typescript
+// MUST import xterm.js CSS for proper rendering
+import "@xterm/xterm/css/xterm.css";
+
 // Type definitions
 interface XTerminalConstructor {
   new (config: XTermOptions): XTerminalInstance;
@@ -318,6 +321,47 @@ async function initializeTerminal() {
     logger.error("Terminal initialization failed", error);
     emit("error", "Failed to initialize terminal");
   }
+}
+```
+
+### 7.3 XTerm.js Styling Standards
+
+When integrating xterm.js, components MUST:
+
+1. **Import xterm.js CSS**: Always include `import "@xterm/xterm/css/xterm.css"` for proper rendering
+2. **Container Sizing**: Terminal containers MUST have `width: 100%` and `height: 100%` to fill parent
+3. **Natural Scrolling**: DO NOT constrain xterm scroll areas - let xterm.js handle scrolling naturally
+4. **Single Container Design**: Avoid double-container styling patterns that cause visual gaps
+5. **Preserve Visual Design**: When simplifying code, only change implementation, never visual appearance
+
+**CSS Pattern for Terminal Containers:**
+```css
+.terminal-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  /* Visual styling (background, borders, etc.) */
+}
+
+.terminal-content {
+  flex: 1;
+  min-height: 0;
+  /* DO NOT add height constraints or overflow:hidden to xterm deep selectors */
+}
+```
+
+**Anti-patterns to AVOID:**
+```css
+/* DON'T constrain xterm scroll areas */
+.terminal-content :deep(.xterm-scroll-area) {
+  max-height: 100% !important;  /* ❌ Prevents natural scrolling */
+  overflow: hidden !important;   /* ❌ Prevents natural scrolling */
+}
+
+/* DON'T add height constraints to viewport */
+.terminal-content :deep(.xterm-viewport) {
+  height: 100% !important;      /* ❌ Prevents natural scrolling */
 }
 ```
 
