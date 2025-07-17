@@ -67,11 +67,41 @@ cd -
 pnpm dev
 ```
 
-### Troubleshooting
+### Windows Troubleshooting
+
+**Git Installation Path with Spaces**
+If you see errors like `/usr/bin/bash: Files\Git\bin\bash.exe: No such file or directory`:
+- This occurs when Git is installed in `C:\Program Files\Git\` (path contains spaces)
+- **Solution**: Use PowerShell with DOS 8.3 short name to work around the space issue:
+  ```powershell
+  cd "node_modules\.pnpm\node-pty@1.1.0-beta34\node_modules\node-pty"
+  $env:SHELL = "C:\PROGRA~1\Git\bin\bash.exe"  # Use DOS 8.3 short name
+  npm rebuild
+  ```
+
+**Missing Spectre-mitigated Libraries**
+If you get build errors about "Spectre-mitigated libraries are required":
+1. Open **Visual Studio Installer** (search in Start menu)
+2. Find your **Visual Studio 2022 Build Tools** and click **"Modify"**
+3. Go to **"Individual components"** tab
+4. Search for **"Spectre"** and install:
+   - `MSVC v143 - VS 2022 C++ x64/x86 Spectre-mitigated libs (Latest)`
+   - `MSVC v143 - VS 2022 C++ ARM64 Spectre-mitigated libs (Latest)` (if needed)
+5. Click **"Modify"** to install, then try rebuilding again
+
+**Missing Windows Build Tools**
+If you don't have Visual Studio Build Tools installed:
+1. Download [Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)
+2. During installation, select:
+   - "Desktop development with C++" workload
+   - Windows 10/11 SDK
+   - Spectre-mitigated libraries (see above)
+
+### General Troubleshooting
 
 If you encounter the error `Cannot find module '../build/Release/pty.node'`, you need to rebuild node-pty:
 ```bash
-cd node_modules/.pnpm/node-pty@1.0.0/node_modules/node-pty && npm rebuild
+cd node_modules/.pnpm/node-pty@1.1.0-beta34/node_modules/node-pty && npm rebuild
 ```
 
 **Note:** We use `npm rebuild` here instead of `pnpm rebuild` because node-pty's build scripts specifically expect npm's rebuild behavior for compiling native bindings.
