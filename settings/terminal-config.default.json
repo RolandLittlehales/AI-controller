@@ -1,0 +1,11 @@
+{
+  "defaultDirectory": null,
+  "defaultShell": "/bin/bash",
+  "fontSize": 14,
+  "fontFamily": "Monaco, Consolas, 'Liberation Mono', monospace",
+  "scrollback": 1000,
+  "cursorBlink": true,
+  "cursorStyle": "block",
+  "version": "1.0.0",
+  "lastUpdated": "2024-01-15T10:00:00.000Z"
+}
