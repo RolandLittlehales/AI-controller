@@ -86,6 +86,10 @@ export const theme = createGlobalTheme(":root", {
     "5xl": "5rem",
   },
 
+  scrollbar: {
+    width: "0.5rem", // 8px
+  },
+
   typography: {
     fontFamily: {
       sans: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',

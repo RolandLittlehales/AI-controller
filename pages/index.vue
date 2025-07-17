@@ -136,13 +136,6 @@ import Terminal from "~/components/Terminal.vue";
   flex: 1;
   min-height: 600px;
   height: 600px;
-  background-color: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--color-border-light);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
 .footer {

@@ -313,6 +313,39 @@ Before any commit, verify compliance with: `docs/standards/README.md#standards-c
 
 ## Code Review & Quality Control Learnings
 
+### Terminal Development & Scrolling Fix Learnings (CRITICAL - FOLLOW THESE PATTERNS)
+
+#### Terminal Implementation Best Practices
+1. **xterm.js CSS Import is Essential**: Always import `@xterm/xterm/css/xterm.css` for proper terminal rendering
+2. **Container Sizing**: Terminal containers must have `width: 100%` and `height: 100%` to fill parent properly
+3. **Natural Scrolling**: Remove CSS constraints on xterm scroll areas - let xterm.js handle scrolling naturally
+4. **Single Container Design**: Avoid double-container styling (terminal-section + terminal-container) - causes visual gaps
+5. **Preserve Visual Design**: When simplifying code, only change implementation, never change visual appearance
+
+#### Key Terminal Scrolling Issues & Solutions
+- **Problem**: Terminal content doesn't scroll when exceeding container height
+- **Root Cause**: CSS constraints on `.xterm-scroll-area` and `.xterm-viewport` preventing natural scrolling
+- **Solution**: Remove height constraints and overflow:hidden from xterm deep selectors
+- **Test Method**: Use actual terminal commands to generate content exceeding container height
+
+#### Terminal CSS Simplification Guidelines
+- **DO**: Remove complex xterm scroll area constraints that cause scrolling issues
+- **DON'T**: Change visual styling (gradients, colors, spacing) when simplifying
+- **DO**: Keep all CSS classes that are actually used in the template
+- **DON'T**: Remove CSS classes without checking template usage first
+- **DO**: Use playwright browser testing to verify changes work visually
+
+#### Container Layout Patterns
+- **Terminal-section styling**: Should only provide basic layout (flex, height) - no background, padding, borders
+- **Terminal-container styling**: Should handle all visual styling (background, borders, header styling)
+- **Gap Prevention**: Single container approach prevents visual gaps between styled containers
+
+#### KISS Principle Applied Correctly
+- **Right Way**: Simplify implementation complexity while preserving exact visual appearance
+- **Wrong Way**: Changing visual design when asked to simplify code complexity
+- **Implementation vs. Design**: Never conflate code simplification with design changes
+- **User Expectations**: "Simplify" means easier to maintain code, not different visual appearance
+
 ### Senior Developer Code Review Process (CRITICAL - FOLLOW THIS EXACT WORKFLOW)
 
 When conducting code reviews or implementing quality improvements, follow this comprehensive workflow:
