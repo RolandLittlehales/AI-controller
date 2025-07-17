@@ -33,14 +33,14 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme } from "~/composables/useTheme";
+import { useThemeSettings } from "~/composables/useSettings";
 
 import ThemeControls from "~/components/theme/ThemeControls.vue";
 import ButtonShowcase from "~/components/theme/ButtonShowcase.vue";
 import CardShowcase from "~/components/theme/CardShowcase.vue";
 import TerminalSection from "~/components/theme/TerminalSection.vue";
 
-const { isDarkMode, toggleTheme, systemPreference } = useTheme();
+const { isDarkMode, toggleTheme, systemPreference } = useThemeSettings();
 </script>
 
 <style scoped>

@@ -14,6 +14,7 @@ interface WebSocketHandler {
 declare global {
   const defineEventHandler: typeof import("h3").defineEventHandler;
   const defineWebSocketHandler: (handler: WebSocketHandler) => unknown;
+  const readBody: typeof import("h3").readBody;
 }
 
 export {};

@@ -103,9 +103,16 @@ export const useThemeSettings = () => {
     await setTheme(newTheme);
   };
 
+  const systemPreference = computed(() => {
+    if (typeof window === "undefined") return "Unknown";
+    if (!window.matchMedia) return "Unknown";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "Dark" : "Light";
+  });
+
   return {
     theme: computed(() => settings.ui.value.theme),
     isDarkMode: settings.isDarkMode,
+    systemPreference,
     setTheme,
     toggleTheme,
   };

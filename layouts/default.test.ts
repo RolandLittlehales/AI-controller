@@ -1,6 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { mount } from "@vue/test-utils";
+import { ref } from "vue";
 import DefaultLayout from "./default.vue";
+
+// Mock the useThemeSettings composable
+vi.mock("~/composables/useSettings", () => ({
+  useThemeSettings: () => ({
+    isDarkMode: ref(false),
+  }),
+}));
 
 describe("DefaultLayout", () => {
   it("should render layout with slot content", () => {

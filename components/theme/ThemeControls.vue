@@ -6,9 +6,9 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme } from "~/composables/useTheme";
+import { useThemeSettings } from "~/composables/useSettings";
 
-const { isDarkMode, toggleTheme } = useTheme();
+const { isDarkMode, toggleTheme } = useThemeSettings();
 
 </script>
 

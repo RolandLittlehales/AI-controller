@@ -168,6 +168,118 @@ This is required because node-pty has native bindings that must be compiled for 
 
 #### IMPORTANT: When asked to "update your learnings", it means update this CLAUDE.md file!
 
+## File System Testing with memfs (CRITICAL - FOLLOW THIS APPROACH)
+
+### Using memfs for File System Mocking
+We use **memfs** to mock file system operations in tests. This approach provides:
+- **In-memory file system** - Safe, fast, and isolated
+- **No real file system interaction** - Tests are predictable and don't affect actual files
+- **Realistic behavior** - memfs simulates real fs operations accurately
+
+### Installation and Setup
+```bash
+pnpm install --save-dev memfs
+```
+
+Global setup in `test/setup.ts`:
+```javascript
+// Mock fs for server-side tests using memfs
+vi.mock("fs", async () => {
+  const memfs = await vi.importActual("memfs") as { fs: Record<string, unknown> };
+  return {
+    default: memfs.fs,
+    ...memfs.fs,
+  };
+});
+
+vi.mock("node:fs", async () => {
+  const memfs = await vi.importActual("memfs") as { fs: Record<string, unknown> };
+  return {
+    default: memfs.fs,
+    ...memfs.fs,
+  };
+});
+```
+
+### Test Pattern for File System Operations
+```javascript
+import { vol } from "memfs";
+
+describe("Service Tests", () => {
+  beforeEach(() => {
+    vol.reset(); // Reset in-memory filesystem
+  });
+
+  afterEach(() => {
+    vol.reset(); // Clean up after each test
+  });
+
+  it("should test file operations", async () => {
+    // Setup: Create files in memory
+    vol.fromJSON({
+      "/path/to/file.json": JSON.stringify({ data: "test" }),
+      "/path/to/directory": null, // Create directory
+    });
+
+    // Test your service
+    const result = await yourService.loadData();
+    
+    // Verify results
+    expect(result).toEqual({ data: "test" });
+    
+    // Verify file system state
+    expect(vol.existsSync("/path/to/output.json")).toBe(true);
+    const savedContent = vol.readFileSync("/path/to/output.json", "utf-8");
+    expect(JSON.parse(savedContent)).toMatchObject({ expected: "data" });
+  });
+});
+```
+
+### Key Benefits of memfs Approach
+1. **Isolation**: Each test runs with a clean file system
+2. **Performance**: In-memory operations are fast
+3. **Predictability**: No external file system dependencies
+4. **Realistic**: Simulates real file system behavior including errors
+5. **Coverage**: Enables testing of all file system code paths
+
+## Testing Philosophy: Focus on Current Application State (CRITICAL)
+
+### Test What Exists, Not What Should Exist
+- **Write tests for the current implementation** - Don't test features that aren't implemented yet
+- **Document current behavior** - Tests should reflect how the code actually works today
+- **Expect current limitations** - If concurrency isn't implemented, tests should expect it to fail
+
+### Example: Testing Concurrent Operations
+```javascript
+it("should fail concurrent write operations (not yet implemented)", async () => {
+  // Setup concurrent operations
+  const save1 = service.saveSettings({ theme: "light" });
+  const save2 = service.saveSettings({ theme: "dark" });
+
+  // Test current behavior - expect failures due to race conditions
+  const results = await Promise.allSettled([save1, save2]);
+  
+  // Document current limitation
+  const failedCount = results.filter(result => result.status === "rejected").length;
+  expect(failedCount).toBeGreaterThan(0); // We expect failures
+  
+  // TODO: Implement proper concurrency handling
+});
+```
+
+### Test Naming Convention
+- Use descriptive names that reflect actual behavior
+- Include "(not yet implemented)" for missing features
+- Add TODO comments for future improvements
+
+### Benefits of This Approach
+1. **Accurate Documentation**: Tests serve as living documentation of current behavior
+2. **Regression Detection**: Changes to current behavior will be caught
+3. **Future Planning**: TODO comments and failing tests guide future development
+4. **Realistic Expectations**: Stakeholders understand current limitations
+
+#### IMPORTANT: When asked to "update your learnings", it means update this CLAUDE.md file!
+
 ## Development Standards (CRITICAL - FOLLOW THESE STANDARDS)
 
 This project uses comprehensive RFC 2119-compliant development standards located in `docs/standards/`. These standards MUST be followed for all development work.
