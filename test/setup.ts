@@ -27,7 +27,7 @@ vi.mock("@xterm/addon-web-links", () => ({
 // Mock Nuxt composables
 vi.mock("nuxt/app", () => ({
   useCookie: vi.fn(() => ref(undefined)),
-  useState: vi.fn((key: string, initialValue: () => any) => ref(initialValue())),
+  useState: vi.fn((key: string, initialValue: () => unknown) => ref(initialValue())),
   useNuxtApp: vi.fn(() => ({
     $config: {},
   })),
@@ -37,7 +37,10 @@ vi.mock("nuxt/app", () => ({
 vi.mock("#components", () => ({
   ClientOnly: {
     name: "ClientOnly",
-    render: (props: any, { slots }: any) => slots.default?.(),
+    render: (props: Record<string, unknown>, { slots }: { slots: Record<string, unknown> }) => {
+      const slotsObj = slots as Record<string, () => unknown>;
+      return slotsObj.default?.();
+    },
   },
 }));
 
@@ -71,3 +74,20 @@ if (typeof process === "undefined") {
     cwd: () => "/home/user",
   };
 }
+
+// Mock fs for server-side tests using memfs
+vi.mock("fs", async () => {
+  const memfs = await vi.importActual("memfs") as { fs: Record<string, unknown> };
+  return {
+    default: memfs.fs,
+    ...memfs.fs,
+  };
+});
+
+vi.mock("node:fs", async () => {
+  const memfs = await vi.importActual("memfs") as { fs: Record<string, unknown> };
+  return {
+    default: memfs.fs,
+    ...memfs.fs,
+  };
+});

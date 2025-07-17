@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { watch, onMounted } from "vue";
-import { useTheme } from "~/composables/useTheme";
+import { useThemeSettings } from "~/composables/useSettings";
 
-const { isDarkMode } = useTheme();
+const { isDarkMode } = useThemeSettings();
 
 // Initial class set on mount
 onMounted(() => {

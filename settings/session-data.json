@@ -1,0 +1,19 @@
+{
+  "activeTerminals": [
+    "terminal1",
+    "terminal2"
+  ],
+  "activeAgents": [
+    "agent1"
+  ],
+  "lastUsedAgent": "agent2",
+  "workingDirectories": {
+    "agent1": "/home/user/project"
+  },
+  "recentDirectories": [
+    "/home/user/project",
+    "/home/user/docs"
+  ],
+  "version": "1.0.0",
+  "lastUpdated": "2025-07-17T11:17:00.418Z"
+}

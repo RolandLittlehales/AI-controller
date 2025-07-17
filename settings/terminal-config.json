@@ -1,0 +1,11 @@
+{
+  "defaultDirectory": "/home/user",
+  "defaultShell": "/bin/bash",
+  "fontSize": 16,
+  "fontFamily": "monospace",
+  "scrollback": 1000,
+  "cursorBlink": true,
+  "cursorStyle": "block",
+  "version": "1.0.0",
+  "lastUpdated": "2025-07-17T11:17:00.411Z"
+}

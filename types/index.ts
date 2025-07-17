@@ -197,3 +197,60 @@ export interface WorktreeEvent {
   timestamp: Date
   data: Record<string, unknown>
 }
+
+// Settings types
+export interface UISettings {
+  theme: "light" | "dark" | "system"
+  welcomeMessageDismissed: boolean
+  sidebarCollapsed: boolean
+  notifications: boolean
+  fontSize: "small" | "medium" | "large"
+  version: string
+  lastUpdated: string
+}
+
+export interface TerminalConfig {
+  defaultDirectory: string | null
+  defaultShell: string
+  fontSize: number
+  fontFamily: string
+  scrollback: number
+  cursorBlink: boolean
+  cursorStyle: "block" | "underline" | "bar"
+  version: string
+  lastUpdated: string
+}
+
+export interface SessionData {
+  activeTerminals: string[]
+  activeAgents: string[]
+  lastUsedAgent: string | null
+  workingDirectories: Record<string, string>
+  recentDirectories: string[]
+  version: string
+  lastUpdated: string
+}
+
+export type SettingsCategory = "ui" | "terminal" | "session"
+
+export interface SettingsStore {
+  ui: UISettings
+  terminal: TerminalConfig
+  session: SessionData
+  isLoading: boolean
+  error: string | null
+}
+
+export interface SettingsUpdatePayload {
+  category: SettingsCategory
+  updates: Partial<UISettings> | Partial<TerminalConfig> | Partial<SessionData>
+}
+
+// Nitro types
+export interface NitroEvent {
+  node: {
+    req: unknown
+    res: unknown
+  }
+  context: Record<string, unknown>
+}
