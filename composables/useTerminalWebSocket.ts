@@ -103,7 +103,7 @@ export function useTerminalWebSocket(
     switch (message.type) {
       case "terminal-created":
         if (isTerminalCreatedMessage(message)) {
-          state.setConnectionState("connected");
+          state.setConnected();
           state.setTerminalId(message.terminalId);
 
           // Focus terminal after a short delay to ensure it's ready
@@ -184,7 +184,7 @@ export function useTerminalWebSocket(
 
     ws.value.onclose = () => {
       logger.info("WebSocket connection closed");
-      state.setConnectionState("disconnected");
+      state.setDisconnected();
       emit("disconnected");
     };
 
@@ -204,7 +204,7 @@ export function useTerminalWebSocket(
       return;
     }
 
-    state.setConnectionState("connecting");
+    state.setConnecting();
 
     try {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";

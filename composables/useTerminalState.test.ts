@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, test } from "vitest";
 import { useTerminalState } from "~/composables/useTerminalState";
 
 describe("useTerminalState", () => {
@@ -24,35 +24,35 @@ describe("useTerminalState", () => {
   });
 
   describe("connection state management", () => {
-    it("should set connecting state correctly", () => {
-      state.setConnectionState("connecting");
+    test.each([
+      {
+        description: "should set connecting state correctly",
+        targetState: "connecting" as const,
+        expectedIsConnected: false,
+        expectedIsConnecting: true,
+        expectedStatusMessage: "Connecting...",
+      },
+      {
+        description: "should set connected state correctly",
+        targetState: "connected" as const,
+        expectedIsConnected: true,
+        expectedIsConnecting: false,
+        expectedStatusMessage: "Terminal connected",
+      },
+      {
+        description: "should set disconnected state correctly",
+        targetState: "disconnected" as const,
+        expectedIsConnected: false,
+        expectedIsConnecting: false,
+        expectedStatusMessage: "Terminal not connected",
+      },
+    ])("$description", ({ targetState, expectedIsConnected, expectedIsConnecting, expectedStatusMessage }: { targetState: "connecting" | "connected" | "disconnected"; expectedIsConnected: boolean; expectedIsConnecting: boolean; expectedStatusMessage: string }) => {
+      state.setConnectionState(targetState);
 
-      expect(state.isConnected.value).toBe(false);
-      expect(state.isConnecting.value).toBe(true);
-      expect(state.statusMessage.value).toBe("Connecting...");
-      expect(state.connectionState.value).toBe("connecting");
-    });
-
-    it("should set connected state correctly", () => {
-      state.setConnectionState("connected");
-
-      expect(state.isConnected.value).toBe(true);
-      expect(state.isConnecting.value).toBe(false);
-      expect(state.statusMessage.value).toBe("Terminal connected");
-      expect(state.connectionState.value).toBe("connected");
-    });
-
-    it("should set disconnected state correctly", () => {
-      // First connect
-      state.setConnectionState("connected");
-
-      // Then disconnect
-      state.setConnectionState("disconnected");
-
-      expect(state.isConnected.value).toBe(false);
-      expect(state.isConnecting.value).toBe(false);
-      expect(state.statusMessage.value).toBe("Terminal not connected");
-      expect(state.connectionState.value).toBe("disconnected");
+      expect(state.isConnected.value).toBe(expectedIsConnected);
+      expect(state.isConnecting.value).toBe(expectedIsConnecting);
+      expect(state.statusMessage.value).toBe(expectedStatusMessage);
+      expect(state.connectionState.value).toBe(targetState);
     });
 
     it("should handle state transitions properly", () => {
@@ -86,19 +86,24 @@ describe("useTerminalState", () => {
       expect(state.hasTerminalId.value).toBe(false);
     });
 
-    it("should generate display terminal ID correctly", () => {
-      const longId = "very-long-terminal-id-123456789";
-      state.setTerminalId(longId);
+    test.each([
+      {
+        description: "should generate display terminal ID correctly",
+        terminalId: "very-long-terminal-id-123456789",
+        expectedDisplayId: "very-lon",
+        expectedLength: 8,
+      },
+      {
+        description: "should handle short terminal ID",
+        terminalId: "abc",
+        expectedDisplayId: "abc",
+        expectedLength: 3,
+      },
+    ])("$description", ({ terminalId, expectedDisplayId, expectedLength }: { terminalId: string; expectedDisplayId: string; expectedLength: number }) => {
+      state.setTerminalId(terminalId);
 
-      expect(state.displayTerminalId.value).toBe("very-lon");
-      expect(state.displayTerminalId.value).toHaveLength(8);
-    });
-
-    it("should handle short terminal ID", () => {
-      const shortId = "abc";
-      state.setTerminalId(shortId);
-
-      expect(state.displayTerminalId.value).toBe("abc");
+      expect(state.displayTerminalId.value).toBe(expectedDisplayId);
+      expect(state.displayTerminalId.value).toHaveLength(expectedLength);
     });
   });
 

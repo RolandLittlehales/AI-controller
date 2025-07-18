@@ -32,23 +32,41 @@ export function useTerminalState() {
   });
 
   // State mutation methods
+  const setConnected = () => {
+    _isConnected.value = true;
+    _isConnecting.value = false;
+    _statusMessage.value = "Terminal connected";
+  };
+
+  const setConnecting = () => {
+    _isConnected.value = false;
+    _isConnecting.value = true;
+    _statusMessage.value = "Connecting...";
+  };
+
+  const setDisconnected = () => {
+    _isConnected.value = false;
+    _isConnecting.value = false;
+    _statusMessage.value = "Terminal not connected";
+  };
+
+  // Backward compatibility - keep setConnectionState for existing code
   const setConnectionState = (state: TerminalConnectionState) => {
     switch (state) {
       case "connected":
-        _isConnected.value = true;
-        _isConnecting.value = false;
-        _statusMessage.value = "Terminal connected";
+        setConnected();
         break;
       case "connecting":
-        _isConnected.value = false;
-        _isConnecting.value = true;
-        _statusMessage.value = "Connecting...";
+        setConnecting();
         break;
       case "disconnected":
-        _isConnected.value = false;
-        _isConnecting.value = false;
-        _statusMessage.value = "Terminal not connected";
+        setDisconnected();
         break;
+      default: {
+        // Exhaustive check - this should never be reached
+        const _exhaustiveCheck: never = state;
+        return _exhaustiveCheck;
+      }
     }
   };
 
@@ -61,17 +79,14 @@ export function useTerminalState() {
   };
 
   const setCustomError = (error: string) => {
+    setDisconnected();
     _statusMessage.value = error;
-    _isConnected.value = false;
-    _isConnecting.value = false;
   };
 
   // Reset all state to initial values
   const resetState = () => {
-    _isConnected.value = false;
-    _isConnecting.value = false;
+    setDisconnected();
     _terminalId.value = undefined;
-    _statusMessage.value = "Terminal not connected";
   };
 
   // Public API - readonly refs to prevent external mutation
@@ -83,12 +98,15 @@ export function useTerminalState() {
     statusMessage: readonly(_statusMessage),
 
     // Computed state
-    connectionState: readonly(connectionState),
-    hasTerminalId: readonly(hasTerminalId),
-    displayTerminalId: readonly(displayTerminalId),
+    connectionState,
+    hasTerminalId,
+    displayTerminalId,
 
     // Actions
-    setConnectionState,
+    setConnected,
+    setConnecting,
+    setDisconnected,
+    setConnectionState, // Backward compatibility
     setTerminalId,
     setStatusMessage,
     setCustomError,

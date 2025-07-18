@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, test } from "vitest";
 import { mount } from "@vue/test-utils";
 import TerminalHeader from "~/components/terminal/TerminalHeader.vue";
 
@@ -17,76 +17,80 @@ describe("TerminalHeader", () => {
       expect(wrapper.find(".terminal-title").text()).toContain("Terminal");
     });
 
-    it("should display terminal ID when provided", () => {
+    test.each([
+      {
+        description: "should display terminal ID when provided",
+        displayTerminalId: "abc12345",
+        expectedText: "Terminal abc12345",
+        shouldNotContain: undefined,
+      },
+      {
+        description: "should display terminal without ID when empty",
+        displayTerminalId: "",
+        expectedText: "Terminal",
+        shouldNotContain: "abc",
+      },
+    ])("$description", ({ displayTerminalId, expectedText, shouldNotContain }: { displayTerminalId: string; expectedText: string; shouldNotContain?: string | undefined }) => {
       const wrapper = mount(TerminalHeader, {
         props: {
           isConnected: true,
           isConnecting: false,
-          displayTerminalId: "abc12345",
+          displayTerminalId,
         },
       });
 
-      expect(wrapper.find(".terminal-title").text()).toContain("Terminal abc12345");
-    });
+      const titleText = wrapper.find(".terminal-title").text();
+      expect(titleText).toContain(expectedText);
 
-    it("should display terminal without ID when empty", () => {
-      const wrapper = mount(TerminalHeader, {
-        props: {
-          isConnected: true,
-          isConnecting: false,
-          displayTerminalId: "",
-        },
-      });
-
-      expect(wrapper.find(".terminal-title").text()).toContain("Terminal");
-      expect(wrapper.find(".terminal-title").text()).not.toContain("abc");
+      if (shouldNotContain) {
+        expect(titleText).not.toContain(shouldNotContain);
+      }
     });
   });
 
   describe("connection states", () => {
-    it("should show connect button when disconnected", () => {
+    test.each([
+      {
+        description: "should show connect button when disconnected",
+        isConnected: false,
+        isConnecting: false,
+        displayTerminalId: "",
+        expectedButtonSelector: ".connect-button",
+        expectedButtonText: "Connect",
+        expectedDisabled: false,
+      },
+      {
+        description: "should show disabled connect button when connecting",
+        isConnected: false,
+        isConnecting: true,
+        displayTerminalId: "",
+        expectedButtonSelector: ".connect-button",
+        expectedButtonText: "Connecting...",
+        expectedDisabled: true,
+      },
+      {
+        description: "should show disconnect button when connected",
+        isConnected: true,
+        isConnecting: false,
+        displayTerminalId: "abc12345",
+        expectedButtonSelector: ".disconnect-button",
+        expectedButtonText: "Disconnect",
+        expectedDisabled: false,
+      },
+    ])("$description", ({ isConnected, isConnecting, displayTerminalId, expectedButtonSelector, expectedButtonText, expectedDisabled }: { isConnected: boolean; isConnecting: boolean; displayTerminalId: string; expectedButtonSelector: string; expectedButtonText: string; expectedDisabled: boolean }) => {
       const wrapper = mount(TerminalHeader, {
-        props: {
-          isConnected: false,
-          isConnecting: false,
-          displayTerminalId: "",
-        },
+        props: { isConnected, isConnecting, displayTerminalId },
       });
 
-      const connectButton = wrapper.find(".connect-button");
-      expect(connectButton.exists()).toBe(true);
-      expect(connectButton.attributes("disabled")).toBeUndefined();
-      expect(connectButton.text()).toContain("Connect");
-    });
+      const button = wrapper.find(expectedButtonSelector);
+      expect(button.exists()).toBe(true);
+      expect(button.text()).toContain(expectedButtonText);
 
-    it("should show disabled connect button when connecting", () => {
-      const wrapper = mount(TerminalHeader, {
-        props: {
-          isConnected: false,
-          isConnecting: true,
-          displayTerminalId: "",
-        },
-      });
-
-      const connectButton = wrapper.find(".connect-button");
-      expect(connectButton.exists()).toBe(true);
-      expect(connectButton.attributes("disabled")).toBeDefined();
-      expect(connectButton.text()).toContain("Connecting...");
-    });
-
-    it("should show disconnect button when connected", () => {
-      const wrapper = mount(TerminalHeader, {
-        props: {
-          isConnected: true,
-          isConnecting: false,
-          displayTerminalId: "abc12345",
-        },
-      });
-
-      const disconnectButton = wrapper.find(".disconnect-button");
-      expect(disconnectButton.exists()).toBe(true);
-      expect(disconnectButton.attributes("disabled")).toBeUndefined();
-      expect(disconnectButton.text()).toContain("Disconnect");
+      if (expectedDisabled) {
+        expect(button.attributes("disabled")).toBeDefined();
+      } else {
+        expect(button.attributes("disabled")).toBeUndefined();
+      }
     });
   });
 

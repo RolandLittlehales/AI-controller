@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, test } from "vitest";
 import { mount } from "@vue/test-utils";
 import TerminalStatus from "~/components/terminal/TerminalStatus.vue";
 
@@ -51,76 +51,64 @@ describe("TerminalStatus", () => {
   });
 
   describe("visibility based on connection state", () => {
-    it("should be visible when not connected", () => {
+    test.each([
+      {
+        description: "should be visible when not connected",
+        isConnected: false,
+        statusMessage: "Terminal not connected",
+        expectedVisible: true,
+      },
+      {
+        description: "should be hidden when connected",
+        isConnected: true,
+        statusMessage: "Terminal connected",
+        expectedVisible: false,
+      },
+    ])("$description", ({ isConnected, statusMessage, expectedVisible }: { isConnected: boolean; statusMessage: string; expectedVisible: boolean }) => {
       const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Terminal not connected",
-        },
+        props: { isConnected, statusMessage },
       });
 
-      expect(wrapper.find(".terminal-status").exists()).toBe(true);
-    });
-
-    it("should be hidden when connected", () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: true,
-          statusMessage: "Terminal connected",
-        },
-      });
-
-      expect(wrapper.find(".terminal-status").exists()).toBe(false);
+      expect(wrapper.find(".terminal-status").exists()).toBe(expectedVisible);
     });
   });
 
   describe("status message types", () => {
-    it("should display connecting message", () => {
+    test.each([
+      {
+        description: "should display connecting message",
+        isConnected: false,
+        statusMessage: "Connecting...",
+        expectedVisible: true,
+      },
+      {
+        description: "should not display when connected",
+        isConnected: true,
+        statusMessage: "Terminal connected",
+        expectedVisible: false,
+      },
+      {
+        description: "should display error message",
+        isConnected: false,
+        statusMessage: "Connection failed: Network error",
+        expectedVisible: true,
+      },
+      {
+        description: "should display long status messages",
+        isConnected: false,
+        statusMessage: "This is a very long status message that should be displayed correctly",
+        expectedVisible: true,
+      },
+    ])("$description", ({ isConnected, statusMessage, expectedVisible }: { isConnected: boolean; statusMessage: string; expectedVisible: boolean }) => {
       const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Connecting...",
-        },
+        props: { isConnected, statusMessage },
       });
 
-      expect(wrapper.find(".status-message").text()).toContain("Connecting...");
-      expect(wrapper.find(".terminal-status").exists()).toBe(true);
-    });
+      expect(wrapper.find(".terminal-status").exists()).toBe(expectedVisible);
 
-    it("should not display when connected", () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: true,
-          statusMessage: "Terminal connected",
-        },
-      });
-
-      expect(wrapper.find(".terminal-status").exists()).toBe(false);
-    });
-
-    it("should display error message", () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Connection failed: Network error",
-        },
-      });
-
-      expect(wrapper.find(".status-message").text()).toContain("Connection failed: Network error");
-      expect(wrapper.find(".terminal-status").exists()).toBe(true);
-    });
-
-    it("should display long status messages", () => {
-      const longMessage = "This is a very long status message that should be displayed correctly";
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: longMessage,
-        },
-      });
-
-      expect(wrapper.find(".status-message").text()).toContain(longMessage);
-      expect(wrapper.find(".terminal-status").exists()).toBe(true);
+      if (expectedVisible) {
+        expect(wrapper.find(".status-message").text()).toContain(statusMessage);
+      }
     });
   });
 
