@@ -25,7 +25,6 @@
         </div>
       </section>
 
-      <ButtonShowcase />
       <CardShowcase />
       <TerminalSection />
     </main>
@@ -36,7 +35,6 @@
 import { useThemeSettings } from "~/composables/useSettings";
 
 import ThemeControls from "~/components/theme/ThemeControls.vue";
-import ButtonShowcase from "~/components/theme/ButtonShowcase.vue";
 import CardShowcase from "~/components/theme/CardShowcase.vue";
 import TerminalSection from "~/components/theme/TerminalSection.vue";
 

@@ -36,22 +36,70 @@
         </section>
 
         <section class="test-card buttons-demo">
-          <h3>Button Styles</h3>
+          <h3>Button Components</h3>
+
+          <!-- Size Variants -->
           <div class="buttons-container">
-            <UButton
-              color="primary"
-              size="sm"
-              data-testid="primary-button"
+            <h4>Sizes</h4>
+            <AppButton
+              v-for="button in BUTTON_SIZES"
+              :key="button.size"
+              :size="button.size"
+              variant="primary"
             >
-              Primary Button
-            </UButton>
-            <UButton
-              color="gray"
-              size="sm"
-              data-testid="secondary-button"
+              {{ button.label }}
+            </AppButton>
+          </div>
+
+          <!-- Variant Types -->
+          <div class="buttons-container">
+            <h4>Variants</h4>
+            <AppButton
+              v-for="button in BUTTON_VARIANTS"
+              :key="button.variant"
+              :variant="button.variant"
             >
-              Secondary Button
-            </UButton>
+              {{ button.label }}
+            </AppButton>
+          </div>
+
+          <!-- With Icons -->
+          <div class="buttons-container">
+            <h4>With Icons</h4>
+            <AppButton
+              v-for="button in ICON_BUTTONS"
+              :key="button.icon"
+              :icon="button.icon"
+              :variant="button.variant"
+            >
+              {{ button.label }}
+            </AppButton>
+            <AppButton
+              variant="primary"
+              trailing-icon="i-heroicons-arrow-right"
+            >
+              Next
+            </AppButton>
+          </div>
+
+          <!-- Icon Only -->
+          <div class="buttons-container">
+            <h4>Icon Only</h4>
+            <AppButton
+              v-for="(button, index) in ICON_ONLY_BUTTONS"
+              :key="`icon-only-${index}`"
+              :icon="button.icon"
+              :variant="button.variant"
+              :size="button.size"
+            />
+          </div>
+
+          <!-- States -->
+          <div class="buttons-container">
+            <h4>States</h4>
+            <AppButton variant="primary" loading>Loading</AppButton>
+            <AppButton variant="secondary" disabled>Disabled</AppButton>
+            <AppButton variant="primary" block>Block Button</AppButton>
           </div>
         </section>
       </div>
@@ -60,7 +108,7 @@
         <h3>Color Palette</h3>
         <div class="colors-grid">
           <div
-            v-for="shade in colorShades"
+            v-for="shade in COLOR_SHADES"
             :key="shade"
             class="color-swatch"
             :class="`color-${shade}`"
@@ -83,11 +131,36 @@
 
 <script setup lang="ts">
 import Terminal from "~/components/Terminal.vue";
+import AppButton from "~/components/ui/AppButton.vue";
 
-// Design system page for showcasing CSS variables and components
+// Constants
+const COLOR_SHADES = ["50", "100", "200", "400", "600", "700", "800", "900"] as const;
 
-// Color shades for demo
-const colorShades = ["50", "100", "200", "400", "600", "700", "800", "900"];
+const BUTTON_SIZES = [
+  { size: "xs", label: "Extra Small" },
+  { size: "sm", label: "Small" },
+  { size: "md", label: "Medium" },
+  { size: "lg", label: "Large" },
+] as const;
+
+const BUTTON_VARIANTS = [
+  { variant: "primary", label: "Primary" },
+  { variant: "secondary", label: "Secondary" },
+  { variant: "danger", label: "Danger" },
+] as const;
+
+const ICON_BUTTONS = [
+  { icon: "i-heroicons-plus", variant: "primary", label: "Add Item" },
+  { icon: "i-heroicons-x-mark", variant: "secondary", label: "Cancel" },
+  { icon: "i-heroicons-trash", variant: "danger", label: "Delete" },
+] as const;
+
+const ICON_ONLY_BUTTONS = [
+  { icon: "i-heroicons-plus", variant: "primary", size: "xs" },
+  { icon: "i-heroicons-x-mark", variant: "secondary", size: "sm" },
+  { icon: "i-heroicons-cog-6-tooth", variant: "primary", size: "md" },
+  { icon: "i-heroicons-trash", variant: "danger", size: "lg" },
+] as const;
 </script>
 
 <style scoped>
@@ -144,6 +217,12 @@ const colorShades = ["50", "100", "200", "400", "600", "700", "800", "900"];
 }
 
 /* Typography Demo */
+.typography-demo .demo-h1,
+.typography-demo .demo-h2,
+.typography-demo .demo-h3 {
+  color: var(--color-text-primary);
+}
+
 .demo-h1 {
   font-size: var(--font-size-4xl);
   font-weight: var(--font-weight-bold);
@@ -215,10 +294,25 @@ const colorShades = ["50", "100", "200", "400", "600", "700", "800", "900"];
 .radius-2xl { border-radius: var(--radius-2xl); }
 
 /* Buttons Demo */
+.buttons-demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
 .buttons-container {
   display: flex;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.buttons-container h4 {
+  width: 100%;
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-semibold);
 }
 
 /* Colors Demo */

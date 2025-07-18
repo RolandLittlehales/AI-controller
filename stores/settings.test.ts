@@ -20,7 +20,7 @@ describe("useSettingsStore", () => {
     const store = useSettingsStore();
 
     expect(store.ui.theme).toBe("system");
-    expect(store.ui.welcomeMessageDismissed).toBe(false);
+    expect(store.ui.showWelcomeMessage).toBe(false);
     expect(store.terminal.defaultDirectory).toBe(null);
     expect(store.terminal.defaultShell).toBe("/bin/bash");
     expect(store.session.activeTerminals).toEqual([]);
@@ -90,7 +90,7 @@ describe("useSettingsStore", () => {
         const mockResponse = {
           success: true,
           data: {
-            ui: { theme: "dark", welcomeMessageDismissed: true },
+            ui: { theme: "dark", showWelcomeMessage: false },
             terminal: { defaultDirectory: "/home/user" },
             session: { activeTerminals: ["term1"] },
           },
@@ -103,7 +103,7 @@ describe("useSettingsStore", () => {
 
         expect(mockFetch).toHaveBeenCalledWith("/api/settings");
         expect(store.ui.theme).toBe("dark");
-        expect(store.ui.welcomeMessageDismissed).toBe(true);
+        expect(store.ui.showWelcomeMessage).toBe(false);
         expect(store.terminal.defaultDirectory).toBe("/home/user");
         expect(store.session.activeTerminals).toEqual(["term1"]);
         expect(store.isLoading).toBe(false);
@@ -140,7 +140,7 @@ describe("useSettingsStore", () => {
       it("should update UI settings", async () => {
         const mockResponse = {
           success: true,
-          data: { theme: "dark", welcomeMessageDismissed: true },
+          data: { theme: "dark", showWelcomeMessage: false },
         };
 
         mockFetch.mockResolvedValue(mockResponse);
@@ -153,7 +153,7 @@ describe("useSettingsStore", () => {
           body: { category: "ui", updates: { theme: "dark" } },
         });
         expect(store.ui.theme).toBe("dark");
-        expect(store.ui.welcomeMessageDismissed).toBe(true);
+        expect(store.ui.showWelcomeMessage).toBe(false);
       });
 
       it("should update terminal settings", async () => {

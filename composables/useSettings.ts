@@ -47,7 +47,7 @@ export const useSettings = () => {
     // UI Settings
     updateUISettings: store.updateUISettings,
     setTheme: store.setTheme,
-    dismissWelcomeMessage: store.dismissWelcomeMessage,
+    hideWelcomeMessage: store.hideWelcomeMessage,
 
     // Terminal Config
     updateTerminalConfig: store.updateTerminalConfig,

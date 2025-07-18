@@ -10,7 +10,7 @@ describe("SettingsFileService", () => {
   // Mock data for testing
   const mockUISettings: UISettings = {
     theme: "dark",
-    welcomeMessageDismissed: false,
+    showWelcomeMessage: true,
     sidebarCollapsed: false,
     notifications: true,
     fontSize: "medium",
@@ -419,7 +419,7 @@ describe("SettingsFileService Integration", () => {
     it("should handle full settings management workflow", async () => {
       const initialSettings: UISettings = {
         theme: "system",
-        welcomeMessageDismissed: false,
+        showWelcomeMessage: true,
         sidebarCollapsed: false,
         notifications: true,
         fontSize: "medium",
@@ -454,7 +454,7 @@ describe("SettingsFileService Integration", () => {
     it("should handle multi-category settings operations", async () => {
       const mockUI: UISettings = {
         theme: "dark",
-        welcomeMessageDismissed: false,
+        showWelcomeMessage: true,
         sidebarCollapsed: false,
         notifications: true,
         fontSize: "medium",
@@ -505,7 +505,7 @@ describe("SettingsFileService Integration", () => {
     it("should handle error recovery scenarios", async () => {
       const mockSettings: UISettings = {
         theme: "dark",
-        welcomeMessageDismissed: false,
+        showWelcomeMessage: true,
         sidebarCollapsed: false,
         notifications: true,
         fontSize: "medium",
@@ -532,7 +532,7 @@ describe("SettingsFileService Integration", () => {
     it("should use atomic write operations with temp files", async () => {
       const mockSettings: UISettings = {
         theme: "dark",
-        welcomeMessageDismissed: false,
+        showWelcomeMessage: true,
         sidebarCollapsed: false,
         notifications: true,
         fontSize: "medium",
@@ -558,7 +558,7 @@ describe("SettingsFileService Integration", () => {
     it("should fail concurrent write operations (not yet implemented)", async () => {
       const mockSettings: UISettings = {
         theme: "dark",
-        welcomeMessageDismissed: false,
+        showWelcomeMessage: true,
         sidebarCollapsed: false,
         notifications: true,
         fontSize: "medium",
