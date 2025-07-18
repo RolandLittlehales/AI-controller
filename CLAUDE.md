@@ -163,6 +163,7 @@ This is required because node-pty has native bindings that must be compiled for 
 - **Coverage Requirements**: 80% statements, branches, functions, lines (perFile: true)
 - **Focus**: User journey testing over isolated unit tests
 - **Philosophy**: Test integration flows rather than individual methods
+- **Test Co-location**: Tests MUST be placed next to the files they test, not in separate folders
 
 #### MINIMAL MOCKING APPROACH - ONLY MOCK WHAT'S ABSOLUTELY NECESSARY
 **✅ DO MOCK (External dependencies outside our control):**
@@ -552,6 +553,64 @@ it("should log initialization failures", async () => {
 3. **Structured Debugging**: Better error context and troubleshooting
 4. **Production Ready**: Consistent logging patterns across codebase
 5. **Maintainable**: Centralized logging logic that can be enhanced
+
+### Test Organization Standards (CRITICAL - FOLLOW THESE PATTERNS)
+
+#### Test Co-location (MANDATORY)
+- **ALWAYS** place test files next to the source files they test
+- **NEVER** use separate test directories (avoid `test/` folder pattern)
+- **Naming Convention**: `{filename}.test.ts` or `{filename}.spec.ts`
+
+#### Correct Test Structure
+```
+components/
+├── Terminal.vue
+├── Terminal.test.ts                    # ✅ Co-located with source
+├── terminal/
+│   ├── TerminalContent.vue
+│   ├── TerminalContent.test.ts         # ✅ Co-located with source
+│   ├── TerminalHeader.vue
+│   └── TerminalHeader.test.ts          # ✅ Co-located with source
+composables/
+├── useSettings.ts
+├── useSettings.test.ts                 # ✅ Co-located with source
+├── useTerminalState.ts
+└── useTerminalState.test.ts            # ✅ Co-located with source
+```
+
+#### Incorrect Test Structure (AVOID)
+```
+components/
+├── Terminal.vue
+└── terminal/
+    ├── TerminalContent.vue
+    └── TerminalHeader.vue
+test/                                   # ❌ Separate test folder
+├── components/
+│   ├── Terminal.test.ts               # ❌ Separated from source
+│   └── terminal/
+│       ├── TerminalContent.test.ts    # ❌ Separated from source
+│       └── TerminalHeader.test.ts     # ❌ Separated from source
+└── composables/
+    └── useSettings.test.ts            # ❌ Separated from source
+```
+
+#### Benefits of Test Co-location
+1. **Easier Navigation**: Tests are immediately adjacent to the code they test
+2. **Better Maintainability**: When updating code, tests are right there
+3. **Clearer Structure**: No need to replicate directory structure in test folders
+4. **Faster Development**: Shorter file paths and less context switching
+5. **Refactoring Safety**: Moving files automatically moves their tests
+
+#### Global Test Setup
+- **Global setup files** can remain in `test/` directory (e.g., `test/setup.ts`)
+- **Test utilities** can remain in `test/utils/` directory
+- **Test configuration** stays in project root (e.g., `vitest.config.ts`)
+
+#### Test Discovery
+- Vitest automatically discovers tests with pattern: `**/*.{test,spec}.{js,ts,jsx,tsx}`
+- No configuration changes needed when moving from separate folders to co-location
+- All tests will be found regardless of location in the project
 
 ### UI/UX Development & Theming Best Practices
 
