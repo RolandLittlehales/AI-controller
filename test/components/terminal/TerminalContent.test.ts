@@ -129,7 +129,7 @@ describe("TerminalContent", () => {
     it("should emit init-error when terminal initialization fails", async () => {
       // Mock the xterm initialization to fail
       mockXterm.initializeTerminal.mockRejectedValue(new Error("Terminal initialization failed"));
-      
+
       wrapper = mount(TerminalContent, {
         props: {
           isConnected: true,

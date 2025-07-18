@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import type { MockedFunction } from "vitest";
 import { useTerminalXterm } from "~/composables/useTerminalXterm";
+import { logger } from "~/utils/logger";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type MockedAny = MockedFunction<any>;
@@ -52,6 +53,16 @@ Object.defineProperty(window, "removeEventListener", {
   writable: true,
 });
 
+// Mock the logger
+vi.mock("~/utils/logger", () => ({
+  logger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 describe("useTerminalXterm", () => {
   let xterm: ReturnType<typeof useTerminalXterm>;
   let mockContainer: HTMLElement;
@@ -60,6 +71,7 @@ describe("useTerminalXterm", () => {
     xterm = useTerminalXterm();
     mockContainer = document.createElement("div");
     vi.clearAllMocks();
+    vi.mocked(logger.warn).mockClear();
   });
 
   afterEach(() => {
@@ -138,10 +150,12 @@ describe("useTerminalXterm", () => {
 
     it("should handle focus on uninitialized terminal gracefully", () => {
       const uninitializedXterm = useTerminalXterm();
+      vi.clearAllMocks(); // Clear mocks after creating new instance
       uninitializedXterm.focusTerminal();
 
       // Should not throw error, just log warning
       expect(mockTerminal.focus).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith("Attempted to focus uninitialized terminal");
     });
 
     it("should fit terminal to container", () => {
@@ -152,10 +166,12 @@ describe("useTerminalXterm", () => {
 
     it("should handle fit on uninitialized terminal gracefully", () => {
       const uninitializedXterm = useTerminalXterm();
+      vi.clearAllMocks(); // Clear mocks after creating new instance
       uninitializedXterm.fitTerminal();
 
       // Should not throw error, just log warning
       expect(mockFitAddon.fit).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith("Attempted to fit terminal without fit addon");
     });
   });
 

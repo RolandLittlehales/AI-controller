@@ -60,7 +60,7 @@ When starting any new development work, follow this essential workflow:
 - **Ensure standards compliance**: Check against `docs/standards/README.md` checklist
 - Ensure adherence to KISS, DRY/WET principles throughout
 
-### 6. Final Review
+### 6. Final Review & Quality Gates (CRITICAL - NON-NEGOTIABLE)
 - Once implementation is complete and confirmed working, perform a **self code review**
 - Focus on:
   - **Correctness**: Does it work as intended?
@@ -69,6 +69,37 @@ When starting any new development work, follow this essential workflow:
   - **DRY/WET**: Proper balance between DRY code and WET tests
   - **Nuance**: Are there subtle considerations addressed?
   - **General best practices**: Any other relevant quality factors
+
+### 7. MANDATORY QUALITY GATES (ABSOLUTE REQUIREMENT)
+**🚨 CRITICAL: At the end of ANY piece of work, ALL quality gates MUST pass 100%. NO EXCEPTIONS.**
+
+```bash
+# ALL these commands MUST return success (exit code 0) before work is considered complete:
+pnpm test        # 100% test success rate - ALL tests must pass
+pnpm lint        # 0 linting errors, 0 warnings
+pnpm typecheck   # 0 TypeScript errors
+pnpm build       # Successful production build
+```
+
+**Why this is absolutely critical:**
+- **Failing tests = broken functionality** - Users depend on working code
+- **Lint errors = code quality issues** - Leads to bugs and maintenance nightmares
+- **TypeScript errors = runtime failures** - Will crash in production
+- **Build failures = deployment issues** - Code cannot be released
+
+**Process:**
+1. **NEVER** consider work "complete" until ALL quality gates pass
+2. **NEVER** move to next task until current task has all quality gates passing
+3. **ALWAYS** run quality gates at the end of each significant change
+4. **ALWAYS** fix ALL failures before considering work done
+5. **ALWAYS** update learnings if quality gates reveal systematic issues
+
+**If quality gates fail:**
+- **STOP immediately** and fix ALL failures
+- **DO NOT** proceed to other tasks
+- **DO NOT** consider work complete
+- **DO NOT** make excuses about "minor" failures
+- **FIX ALL ISSUES** until every gate passes 100%
 
 ## Build & Development Commands
 
@@ -452,6 +483,76 @@ pnpm build       # → Successful production build
 7. **Browser Compatibility**: Always check API availability in universal/browser code
 8. **Component Testing**: Test behavior and user interactions, not internal implementation
 
+### Console Logging & Logger Testing Best Practices (CRITICAL - FOLLOW THESE PATTERNS)
+
+#### Never Use Console Directly in Code
+- **ALWAYS** use the logger utility (`~/utils/logger`) instead of direct console calls
+- **Replace** all `console.log`, `console.error`, `console.warn`, `console.info` with appropriate logger methods
+- **Reason**: Logger provides structured logging, proper error handling, and can be mocked for testing
+
+#### Logger Mocking in Tests (MANDATORY PATTERN)
+```javascript
+// In test files - ALWAYS mock the logger to prevent output pollution
+vi.mock("~/utils/logger", () => ({
+  logger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+```
+
+#### Logger Test Verification Patterns
+```javascript
+// Test that logger methods are called correctly
+expect(logger.error).toHaveBeenCalledWith("Error message", { error: errorObject });
+expect(logger.warn).toHaveBeenCalledWith("Warning message");
+expect(logger.info).toHaveBeenCalledWith("Info message");
+
+// For error logging - wrap error objects in context
+logger.error("Failed to initialize", { error }); // ✅ Correct
+logger.error("Failed to initialize", error);     // ❌ Incorrect
+```
+
+#### Test Output Cleanliness
+- **Mock ALL logging** to prevent test output pollution
+- **Tests should run silently** - no console output except test results
+- **Verify log messages** rather than allowing them to pollute test output
+- **Use structured logging** with context objects for better debugging
+
+#### Logger Implementation Guidelines
+- **Error Context**: Always wrap error objects in context: `{ error }`
+- **Structured Data**: Use objects for complex data: `{ userId, action, timestamp }`
+- **Consistent Messaging**: Use clear, descriptive messages
+- **Appropriate Levels**: 
+  - `error` for failures that need attention
+  - `warn` for concerning but non-critical issues
+  - `info` for important operational events
+  - `debug` for development troubleshooting
+
+#### Testing Logger Behavior
+```javascript
+// Test that errors are logged properly
+it("should log initialization failures", async () => {
+  mockService.init.mockRejectedValue(new Error("Init failed"));
+  
+  await service.initialize();
+  
+  expect(logger.error).toHaveBeenCalledWith(
+    "Failed to initialize settings", 
+    { error: new Error("Init failed") }
+  );
+});
+```
+
+#### Key Benefits of Logger Testing Pattern
+1. **Silent Tests**: No output pollution during test runs
+2. **Behavior Verification**: Confirm correct logging behavior  
+3. **Structured Debugging**: Better error context and troubleshooting
+4. **Production Ready**: Consistent logging patterns across codebase
+5. **Maintainable**: Centralized logging logic that can be enhanced
+
 ### UI/UX Development & Theming Best Practices
 
 #### CSS Architecture & Design System Implementation
@@ -518,10 +619,23 @@ pnpm build       # → Successful production build
     - Test functionality immediately, don't assume logic equals working features
     - Use proper CSS patterns instead of forcing with anti-patterns
 
-### Code Review Success Metrics
+### Code Review Success Metrics (MANDATORY - ALL MUST PASS)
+**🚨 CRITICAL: ALL quality gates MUST pass 100% before any work is considered complete:**
+
+```bash
+# These commands MUST ALL return success (exit code 0):
+pnpm test        # ✅ 100% test success rate - ZERO failures allowed
+pnpm lint        # ✅ 0 linting errors, 0 warnings
+pnpm typecheck   # ✅ 0 TypeScript errors
+pnpm build       # ✅ Successful production build
+```
+
+**Additional Success Metrics:**
 - **Perfect Quality Score**: 0 lint warnings + 0 TypeScript errors + 100% test success
 - **High Coverage**: >90% code coverage with meaningful tests
 - **Clean Architecture**: KISS/DRY principles followed consistently
 - **Production Ready**: Successful build with no blockers
 - **UI/UX Verification**: Manual testing confirms visual changes work as designed
 - **No CSS Anti-patterns**: No `!important`, proper specificity, semantic color usage
+
+**ABSOLUTELY CRITICAL:** If ANY quality gate fails, the work is NOT complete. Fix ALL failures immediately.

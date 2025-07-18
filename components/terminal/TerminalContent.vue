@@ -12,6 +12,7 @@ import { ref, onMounted, onUnmounted } from "vue";
 import type { XTermOptions } from "~/types/terminal";
 import { useTerminalXterm } from "~/composables/useTerminalXterm";
 import { DEFAULT_TERMINAL_CONFIG } from "~/types/terminal";
+import { logger } from "~/utils/logger";
 
 /**
  * Terminal content component
@@ -66,7 +67,7 @@ onUnmounted(() => {
     xterm.cleanup();
   } catch (error) {
     // Silently handle cleanup errors - component is being destroyed anyway
-    console.warn("Error during terminal cleanup:", error);
+    logger.warn("Error during terminal cleanup", { error });
   }
 });
 

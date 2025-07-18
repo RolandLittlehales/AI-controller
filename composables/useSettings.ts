@@ -1,6 +1,7 @@
 import { ref, computed, toRef, readonly } from "vue";
 import type { UISettings } from "~/types";
 import { useSettingsStore } from "~/stores/settings";
+import { logger } from "~/utils/logger";
 
 export const useSettings = () => {
   const store = useSettingsStore();
@@ -14,8 +15,7 @@ export const useSettings = () => {
         await store.loadAllSettings();
         initialized.value = true;
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to initialize settings:", error);
+        logger.error("Failed to initialize settings", { error });
       }
     }
   };
