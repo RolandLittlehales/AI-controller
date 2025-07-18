@@ -6,7 +6,15 @@
     </header>
 
     <main class="main">
-      <div class="welcome-section">
+      <div v-if="ui.showWelcomeMessage" class="welcome-section">
+        <AppButton
+          icon="i-heroicons-x-mark"
+          variant="secondary"
+          size="xs"
+          class="welcome-close-button"
+          aria-label="Close welcome message"
+          @click="handleDismissWelcome"
+        />
         <h2 class="welcome-title">🚀 Welcome to AI Agent Manager</h2>
 
         <div class="features">
@@ -45,6 +53,14 @@
 
 <script setup lang="ts">
 import Terminal from "~/components/Terminal.vue";
+import AppButton from "~/components/ui/AppButton.vue";
+import { useSettings } from "~/composables/useSettings";
+
+const { ui, hideWelcomeMessage } = useSettings();
+
+const handleDismissWelcome = async () => {
+  await hideWelcomeMessage();
+};
 </script>
 
 <style scoped>
@@ -93,6 +109,13 @@ import Terminal from "~/components/Terminal.vue";
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--color-border-light);
+  position: relative;
+}
+
+.welcome-close-button {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
 }
 
 .welcome-title {

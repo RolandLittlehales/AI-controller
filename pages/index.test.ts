@@ -1,6 +1,10 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
+import { createPinia, setActivePinia } from "pinia";
 import IndexPage from "./index.vue";
+
+// Mock $fetch for settings API calls
+global.$fetch = vi.fn().mockResolvedValue({}) as unknown as typeof $fetch;
 
 // Mock Terminal component - it has its own comprehensive tests
 vi.mock("~/components/Terminal.vue", () => ({
@@ -8,6 +12,16 @@ vi.mock("~/components/Terminal.vue", () => ({
     name: "Terminal",
     template: '<div class="mock-terminal">Terminal Component</div>',
     props: ["autoConnect"],
+  },
+}));
+
+// Mock AppButton component
+vi.mock("~/components/ui/AppButton.vue", () => ({
+  default: {
+    name: "AppButton",
+    template: '<button class="mock-app-button"><slot /></button>',
+    props: ["icon", "variant", "size", "aria-label"],
+    emits: ["click"],
   },
 }));
 
@@ -20,22 +34,37 @@ const ClientOnlyMock = {
   },
 };
 
+beforeEach(() => {
+  setActivePinia(createPinia());
+});
+
+// Helper function to mount component with welcome message visible
+const mountWithWelcomeMessage = async () => {
+  // Update the store to show welcome message before mounting
+  const { useSettingsStore } = await import("~/stores/settings");
+  const store = useSettingsStore();
+  store.ui.showWelcomeMessage = true;
+
+  const wrapper = mount(IndexPage);
+  return wrapper;
+};
+
 describe("IndexPage", () => {
-  it("should render page with correct title", () => {
-    const wrapper = mount(IndexPage);
+  it("should render page with correct title", async () => {
+    const wrapper = await mountWithWelcomeMessage();
 
     expect(wrapper.find("h1").text()).toBe("AI Agent Manager");
     expect(wrapper.find("h2").text()).toBe("🚀 Welcome to AI Agent Manager");
   });
 
-  it("should display application description", () => {
-    const wrapper = mount(IndexPage);
+  it("should display application description", async () => {
+    const wrapper = await mountWithWelcomeMessage();
 
     expect(wrapper.text()).toContain("A powerful web application for managing multiple terminal-based AI instances");
   });
 
-  it("should render feature list", () => {
-    const wrapper = mount(IndexPage);
+  it("should render feature list", async () => {
+    const wrapper = await mountWithWelcomeMessage();
 
     const featureItems = wrapper.findAll(".features-list-item");
     expect(featureItems).toHaveLength(4);
@@ -47,8 +76,8 @@ describe("IndexPage", () => {
     expect(featureTexts).toContain("Session persistence");
   });
 
-  it("should display version and status information", () => {
-    const wrapper = mount(IndexPage);
+  it("should display version and status information", async () => {
+    const wrapper = await mountWithWelcomeMessage();
 
     expect(wrapper.text()).toContain("Version: 0.1.0");
     expect(wrapper.text()).toContain("Status: Ready");
@@ -68,8 +97,8 @@ describe("IndexPage", () => {
     expect(wrapper.find("footer").exists()).toBe(true);
   });
 
-  it("should have proper heading hierarchy", () => {
-    const wrapper = mount(IndexPage);
+  it("should have proper heading hierarchy", async () => {
+    const wrapper = await mountWithWelcomeMessage();
 
     const h1 = wrapper.find("h1");
     const h2 = wrapper.find("h2");
@@ -80,8 +109,8 @@ describe("IndexPage", () => {
     expect(h2.text()).toBe("🚀 Welcome to AI Agent Manager");
   });
 
-  it("should render feature description text", () => {
-    const wrapper = mount(IndexPage);
+  it("should render feature description text", async () => {
+    const wrapper = await mountWithWelcomeMessage();
 
     expect(wrapper.find(".features-text").text()).toBe("This application helps you manage multiple CLI-based AI tools with:");
   });

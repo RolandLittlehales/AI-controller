@@ -5,7 +5,7 @@ export const useSettingsStore = defineStore("settings", {
   state: (): SettingsStore => ({
     ui: {
       theme: "system",
-      welcomeMessageDismissed: false,
+      showWelcomeMessage: false,
       sidebarCollapsed: false,
       notifications: true,
       fontSize: "medium",
@@ -151,8 +151,8 @@ export const useSettingsStore = defineStore("settings", {
       await this.updateUISettings({ theme });
     },
 
-    async dismissWelcomeMessage() {
-      await this.updateUISettings({ welcomeMessageDismissed: true });
+    async hideWelcomeMessage() {
+      await this.updateUISettings({ showWelcomeMessage: false });
     },
 
     async setDefaultDirectory(directory: string) {

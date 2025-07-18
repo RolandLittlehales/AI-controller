@@ -1,6 +1,6 @@
 {
   "theme": "system",
-  "welcomeMessageDismissed": false,
+  "showWelcomeMessage": true,
   "sidebarCollapsed": false,
   "notifications": true,
   "fontSize": "medium",

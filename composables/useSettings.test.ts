@@ -10,7 +10,7 @@ vi.mock("~/stores/settings", () => ({
 const mockStore = {
   ui: {
     theme: "dark",
-    welcomeMessageDismissed: false,
+    showWelcomeMessage: true,
     sidebarCollapsed: false,
     notifications: true,
     fontSize: "medium",
@@ -48,7 +48,7 @@ const mockStore = {
   resetSettings: vi.fn(),
   updateUISettings: vi.fn(),
   setTheme: vi.fn(),
-  dismissWelcomeMessage: vi.fn(),
+  hideWelcomeMessage: vi.fn(),
   updateTerminalConfig: vi.fn(),
   setDefaultDirectory: vi.fn(),
   updateSessionData: vi.fn(),

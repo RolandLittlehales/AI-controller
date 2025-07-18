@@ -201,7 +201,7 @@ export interface WorktreeEvent {
 // Settings types
 export interface UISettings {
   theme: "light" | "dark" | "system"
-  welcomeMessageDismissed: boolean
+  showWelcomeMessage: boolean
   sidebarCollapsed: boolean
   notifications: boolean
   fontSize: "small" | "medium" | "large"

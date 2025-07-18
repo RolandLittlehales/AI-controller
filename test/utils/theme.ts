@@ -71,7 +71,7 @@ export const createMockSettingsStore = () => {
   const mockStore = {
     ui: {
       theme: "system" as "system" | "light" | "dark",
-      welcomeMessageDismissed: false,
+      showWelcomeMessage: true,
       sidebarCollapsed: false,
       notifications: true,
       fontSize: "medium" as const,
@@ -109,7 +109,7 @@ export const createMockSettingsStore = () => {
     resetSettings: vi.fn(),
     setTheme: vi.fn(),
     toggleTheme: vi.fn(),
-    dismissWelcomeMessage: vi.fn(),
+    hideWelcomeMessage: vi.fn(),
     updateTerminalConfig: vi.fn(),
     setDefaultDirectory: vi.fn(),
     updateSessionData: vi.fn(),
