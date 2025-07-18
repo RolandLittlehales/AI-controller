@@ -1,107 +1,60 @@
 <template>
   <div class="terminal-container">
-    <div class="terminal-header">
-      <div class="terminal-title">
-        <Icon name="i-heroicons-terminal" class="terminal-icon" />
-        Terminal {{ terminalId ? `(${terminalId.slice(0, 8)})` : '' }}
-      </div>
-      <div class="terminal-controls">
-        <button
-          v-if="!isConnected"
-          class="connect-button"
-          :class="{ 'loading': isConnecting }"
-          :disabled="isConnecting"
-          @click="connect"
-        >
-          <Icon v-if="isConnecting" name="i-heroicons-arrow-path" class="animate-spin" />
-          <Icon v-else name="i-heroicons-play" />
-          {{ isConnecting ? 'Connecting...' : 'Connect' }}
-        </button>
-        <button
-          v-else
-          class="disconnect-button"
-          @click="disconnect"
-        >
-          <Icon name="i-heroicons-x-mark" />
-          Disconnect
-        </button>
-      </div>
-    </div>
+    <TerminalHeader
+      :is-connected="state.isConnected.value"
+      :is-connecting="state.isConnecting.value"
+      :display-terminal-id="state.displayTerminalId.value"
+      @connect="handleConnect"
+      @disconnect="handleDisconnect"
+    />
 
-    <div v-if="!isConnected" class="terminal-status">
-      <div class="status-message">
-        <Icon name="i-heroicons-exclamation-triangle" />
-        {{ statusMessage }}
-      </div>
-    </div>
+    <TerminalStatus
+      :is-connected="state.isConnected.value"
+      :status-message="state.statusMessage.value"
+    />
 
-    <div
-      ref="terminalRef"
-      class="terminal-content"
-      :class="{ 'terminal-disconnected': !isConnected }"
-      @click="focusTerminal"
+    <TerminalContent
+      ref="terminalContentRef"
+      :is-connected="state.isConnected.value"
+      :terminal-config="terminalConfig"
+      @focus="handleFocus"
+      @terminal-ready="handleTerminalReady"
+      @init-error="handleInitError"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, readonly } from "vue";
-import type { WebSocketMessage, TerminalMessage } from "~/types";
-import { logger } from "~/utils/logger";
+import { ref, onMounted, onUnmounted, readonly } from "vue";
+import type { Ref } from "vue";
+import { useTerminalState } from "~/composables/useTerminalState";
+import type { useTerminalXterm } from "~/composables/useTerminalXterm";
+import { useTerminalWebSocket } from "~/composables/useTerminalWebSocket";
+import { DEFAULT_TERMINAL_CONFIG } from "~/types/terminal";
+// Remove unused imports - interface defined inline
+import TerminalHeader from "./terminal/TerminalHeader.vue";
+import TerminalStatus from "./terminal/TerminalStatus.vue";
+import TerminalContent from "./terminal/TerminalContent.vue";
 import "@xterm/xterm/css/xterm.css";
-// Simplified type definitions for xterm.js integration
-interface XTerminalConstructor {
-  new (config: XTermOptions): XTerminalInstance;
-}
 
-interface XTerminalInstance {
-  [key: string]: unknown;
-  open(element: HTMLElement): void;
-  write(data: string): void;
-  dispose(): void;
-  onData(callback: (data: string) => void): void;
-  onResize(callback: (size: { cols: number; rows: number }) => void): void;
-  focus(): void;
-  loadAddon(addon: unknown): void;
-}
+/**
+ * Terminal component - Hybrid refactored version
+ *
+ * Main orchestration component that coordinates:
+ * - State management (useTerminalState)
+ * - WebSocket communication (useTerminalWebSocket)
+ * - xterm.js integration (useTerminalXterm)
+ * - UI components (TerminalHeader, TerminalStatus, TerminalContent)
+ *
+ * Maintains exact same interface as original component for backwards compatibility.
+ */
 
-interface XTermFitAddonConstructor {
-  new (): XTermFitAddon;
-}
-
-interface XTermFitAddon {
-  [key: string]: unknown;
-  fit(): void;
-}
-
-interface XTermWebLinksAddonConstructor {
-  new (): XTermWebLinksAddon;
-}
-
-interface XTermWebLinksAddon {
-  [key: string]: unknown;
-}
-
-interface XTermOptions {
-  [key: string]: unknown;
-  fontFamily?: string;
-  fontSize?: number;
-  lineHeight?: number;
-  cursorBlink?: boolean;
-  cursorStyle?: string;
-  theme?: Record<string, unknown>;
-}
-
-// Dynamic imports for browser-only modules
-let Terminal: XTerminalConstructor;
-let FitAddon: XTermFitAddonConstructor;
-let WebLinksAddon: XTermWebLinksAddonConstructor;
-
+// Props - maintain exact same interface
 interface Props {
-  cwd?: string
-  rows?: number
-  cols?: number
-  autoConnect?: boolean
+  cwd?: string;
+  rows?: number;
+  cols?: number;
+  autoConnect?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -111,335 +64,106 @@ const props = withDefaults(defineProps<Props>(), {
   autoConnect: true,
 });
 
+// Emits - maintain exact same interface
 const emit = defineEmits<{
-  connected: [terminalId: string]
-  disconnected: []
-  error: [message: string]
+  connected: [terminalId: string];
+  disconnected: [];
+  error: [message: string];
 }>();
 
-// Terminal state
-const terminalRef = ref<HTMLDivElement>();
-const terminal = ref<XTerminalInstance>();
-const fitAddon = ref<XTermFitAddon>();
-const webLinksAddon = ref<XTermWebLinksAddon>();
-const resizeObserver = ref<ResizeObserver>();
-
-// Connection state
-const ws = ref<WebSocket>();
-const isConnected = ref(false);
-const isConnecting = ref(false);
-const terminalId = ref<string>();
-const statusMessage = ref("Terminal not connected");
+// Template refs
+const terminalContentRef = ref<InstanceType<typeof TerminalContent>>();
 
 // Terminal configuration
-const terminalConfig: XTermOptions = {
-  fontFamily: "Fira Code, JetBrains Mono, Monaco, Consolas, monospace",
-  fontSize: 14,
-  lineHeight: 1.2,
-  cursorBlink: true,
-  cursorStyle: "block" as const,
-  theme: {
-    background: "#1e1e1e",
-    foreground: "#d4d4d4",
-    cursor: "#ffffff",
-    selection: "#264f78",
-    black: "#000000",
-    red: "#cd3131",
-    green: "#0dbc79",
-    yellow: "#e5e510",
-    blue: "#2472c8",
-    magenta: "#bc3fbc",
-    cyan: "#11a8cd",
-    white: "#e5e5e5",
-    brightBlack: "#666666",
-    brightRed: "#f14c4c",
-    brightGreen: "#23d18b",
-    brightYellow: "#f5f543",
-    brightBlue: "#3b8eea",
-    brightMagenta: "#d670d6",
-    brightCyan: "#29b8db",
-    brightWhite: "#ffffff",
-  },
+const terminalConfig = DEFAULT_TERMINAL_CONFIG;
+
+// Initialize composables
+const state = useTerminalState();
+
+// Create a placeholder xterm ref that will be populated from TerminalContent
+const xtermRef = ref<ReturnType<typeof useTerminalXterm>>();
+
+// Create type-safe emit wrapper
+const emitWrapper = (event: string, ...args: unknown[]) => {
+  if (event === "connected" && args.length === 1 && typeof args[0] === "string") {
+    emit("connected", args[0]);
+  } else if (event === "disconnected" && args.length === 0) {
+    emit("disconnected");
+  } else if (event === "error" && args.length === 1 && typeof args[0] === "string") {
+    emit("error", args[0]);
+  }
 };
 
+const websocket = useTerminalWebSocket(
+  state,
+  xtermRef as Ref<ReturnType<typeof useTerminalXterm> | undefined>,
+  props,
+  emitWrapper,
+);
+
+// Event handlers
+const handleConnect = async () => {
+  try {
+    await websocket.connect();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Connection failed";
+    state.setCustomError(errorMessage);
+    emit("error", errorMessage);
+  }
+};
+
+// Component lifecycle
 onMounted(async () => {
-  await initializeTerminal();
   if (props.autoConnect) {
-    await connect();
+    await handleConnect();
   }
 });
 
 onUnmounted(() => {
-  cleanup();
+  websocket.cleanup();
+  // xterm cleanup is handled by TerminalContent
 });
 
-async function initializeTerminal() {
-  if (!terminalRef.value) return;
+const handleDisconnect = () => {
+  websocket.disconnect();
+};
 
-  try {
-    // Dynamic imports for browser-only modules
-    if (!Terminal) {
-      const xterm = await import("@xterm/xterm");
-      const fitAddon = await import("@xterm/addon-fit");
-      const webLinksAddon = await import("@xterm/addon-web-links");
-
-      Terminal = xterm.Terminal as unknown as XTerminalConstructor;
-      FitAddon = fitAddon.FitAddon as unknown as XTermFitAddonConstructor;
-      WebLinksAddon = webLinksAddon.WebLinksAddon as unknown as XTermWebLinksAddonConstructor;
-    }
-
-    // Create terminal instance
-    terminal.value = new Terminal(terminalConfig);
-
-    // Create addons
-    fitAddon.value = new FitAddon();
-    webLinksAddon.value = new WebLinksAddon();
-
-    // Load addons
-    terminal.value.loadAddon(fitAddon.value);
-    terminal.value.loadAddon(webLinksAddon.value);
-
-    // Open terminal in DOM
-    terminal.value.open(terminalRef.value);
-
-    // Handle terminal input
-    terminal.value.onData((data: string) => {
-      if (isConnected.value && ws.value && terminalId.value) {
-        const message: TerminalMessage = {
-          type: "terminal-data",
-          terminalId: terminalId.value,
-          data: { input: data },
-          timestamp: new Date(),
-        };
-        ws.value.send(JSON.stringify(message));
-      }
-    });
-
-    // Handle resize
-    terminal.value.onResize(({ cols, rows }: { cols: number; rows: number }) => {
-      if (isConnected.value && ws.value && terminalId.value) {
-        const message: WebSocketMessage = {
-          type: "terminal-resize",
-          terminalId: terminalId.value,
-          data: { cols, rows },
-          timestamp: new Date(),
-        };
-        ws.value.send(JSON.stringify(message));
-      }
-    });
-
-    // Fit terminal to container
-    await nextTick();
-    fitAddon.value?.fit();
-
-    // Set up ResizeObserver to handle container size changes
-    resizeObserver.value = new ResizeObserver(() => {
-      if (fitAddon.value && terminal.value) {
-        fitAddon.value.fit();
-      }
-    });
-
-    // Observe the terminal container for size changes
-    resizeObserver.value.observe(terminalRef.value);
-
-    // Focus terminal after initialization
-    terminal.value.focus();
-
-    // Handle window resize
-    window.addEventListener("resize", handleWindowResize);
-
-  } catch (error) {
-    logger.error("Terminal initialization failed", error, { component: "Terminal", action: "initialize" });
-    statusMessage.value = "Failed to initialize terminal";
-    emit("error", "Failed to initialize terminal");
+const handleFocus = () => {
+  // Focus the terminal in TerminalContent
+  if (terminalContentRef.value?.xterm) {
+    terminalContentRef.value.xterm.focusTerminal();
   }
-}
+};
 
-async function connect() {
-  if (isConnecting.value || isConnected.value) return;
-
-  isConnecting.value = true;
-  statusMessage.value = "Connecting...";
-
-  try {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/api/ws/terminal`;
-
-    ws.value = new WebSocket(wsUrl);
-
-    ws.value.onopen = () => {
-
-      // Request terminal creation
-      const message: WebSocketMessage = {
-        type: "terminal-create",
-        data: {
-          cols: props.cols,
-          rows: props.rows,
-          cwd: props.cwd || (typeof process !== "undefined" && process.cwd?.() || "/"),
-        },
-        timestamp: new Date(),
-      };
-
-      if (ws.value) {
-        ws.value.send(JSON.stringify(message));
-      }
-    };
-
-    ws.value.onmessage = (event) => {
-      try {
-        const message: WebSocketMessage = JSON.parse(event.data);
-        handleWebSocketMessage(message);
-      } catch (error) {
-        logger.error("Invalid WebSocket message received", error, { component: "Terminal", action: "message" });
-      }
-    };
-
-    ws.value.onclose = () => {
-      isConnected.value = false;
-      isConnecting.value = false;
-      statusMessage.value = "Terminal disconnected";
-      emit("disconnected");
-    };
-
-    ws.value.onerror = (error) => {
-      logger.error("WebSocket connection error", error, { component: "Terminal", action: "websocket" });
-      isConnected.value = false;
-      isConnecting.value = false;
-      statusMessage.value = "Connection error";
-      emit("error", "WebSocket connection error");
-    };
-
-  } catch (error) {
-    logger.error("Terminal connection failed", error, { component: "Terminal", action: "connect" });
-    isConnecting.value = false;
-    statusMessage.value = "Failed to connect";
-    emit("error", "Failed to connect to terminal");
+const handleTerminalReady = () => {
+  // Get the xterm instance from the TerminalContent component
+  if (terminalContentRef.value?.xterm) {
+    // Set the xterm instance reference for the websocket
+    xtermRef.value = terminalContentRef.value.xterm;
+    websocket.setupTerminalEventHandlers();
   }
-}
+};
 
-function disconnect() {
-  if (!isConnected.value) return;
+const handleInitError = (error: string) => {
+  state.setCustomError(error);
+  emit("error", error);
+};
 
-  if (ws.value && terminalId.value) {
-    // Send destroy message
-    const message: WebSocketMessage = {
-      type: "terminal-destroy",
-      terminalId: terminalId.value,
-      data: {},
-      timestamp: new Date(),
-    };
-    ws.value.send(JSON.stringify(message));
-  }
+// Public methods - maintain exact same interface
+const connect = async () => {
+  await handleConnect();
+};
 
-  cleanup();
-}
+const disconnect = () => {
+  handleDisconnect();
+};
 
-// Type guard functions for better message handling
-function isTerminalCreatedMessage(message: WebSocketMessage): message is WebSocketMessage & { terminalId: string } {
-  return message.type === "terminal-created" && typeof message.terminalId === "string";
-}
-
-function isTerminalDataMessage(message: WebSocketMessage): message is WebSocketMessage & { data: { output: string } } {
-  return message.type === "terminal-data" &&
-         message.data !== null &&
-         typeof message.data === "object" &&
-         "output" in message.data &&
-         typeof message.data.output === "string";
-}
-
-function isErrorMessage(message: WebSocketMessage): message is WebSocketMessage & { data: { message: string } } {
-  return message.type === "error" &&
-         message.data !== null &&
-         typeof message.data === "object" &&
-         "message" in message.data &&
-         typeof message.data.message === "string";
-}
-
-function handleWebSocketMessage(message: WebSocketMessage) {
-  switch (message.type) {
-    case "terminal-created":
-      if (isTerminalCreatedMessage(message)) {
-        isConnected.value = true;
-        isConnecting.value = false;
-        terminalId.value = message.terminalId;
-        statusMessage.value = "Terminal connected";
-        // Focus terminal after a short delay to ensure it's ready
-        setTimeout(() => {
-          terminal.value?.focus();
-        }, 100);
-        emit("connected", message.terminalId);
-      }
-      break;
-
-    case "terminal-data":
-      if (isTerminalDataMessage(message) && terminal.value) {
-        terminal.value.write(message.data.output);
-      }
-      break;
-
-    case "terminal-exit":
-      terminal.value?.write("\r\n\x1b[31mTerminal process exited\x1b[0m\r\n");
-      setTimeout(() => {
-        disconnect();
-      }, 1000);
-      break;
-
-    case "terminal-destroyed":
-      disconnect();
-      break;
-
-    case "error": {
-      logger.error("Terminal error received", message.data, { component: "Terminal", action: "handleMessage" });
-      const errorMessage = isErrorMessage(message) ? message.data.message : "Terminal error";
-      statusMessage.value = errorMessage;
-      emit("error", errorMessage);
-      break;
-    }
-  }
-}
-
-function handleWindowResize() {
-  if (fitAddon.value && terminal.value) {
-    fitAddon.value?.fit?.();
-  }
-}
-
-function cleanup() {
-  if (ws.value) {
-    ws.value.close();
-    ws.value = undefined;
-  }
-
-  if (terminal.value) {
-    terminal.value.dispose();
-    terminal.value = undefined;
-  }
-
-  if (resizeObserver.value) {
-    resizeObserver.value.disconnect();
-    resizeObserver.value = undefined;
-  }
-
-  window.removeEventListener("resize", handleWindowResize);
-
-  isConnected.value = false;
-  isConnecting.value = false;
-  terminalId.value = undefined;
-  statusMessage.value = "Terminal not connected";
-}
-
-function focusTerminal() {
-  if (terminal.value && isConnected.value) {
-    terminal.value.focus();
-  }
-}
-
-// Public methods
+// Expose public API - maintain exact same interface
 defineExpose({
   connect,
   disconnect,
-  isConnected: readonly(isConnected),
-  terminalId: readonly(terminalId),
+  isConnected: readonly(state.isConnected),
+  terminalId: readonly(state.terminalId),
 });
 </script>
 
@@ -455,118 +179,4 @@ defineExpose({
   overflow: hidden;
   --scrollbar-width: 8px;
 }
-
-.terminal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: linear-gradient(135deg, var(--color-surface-secondary) 0%, var(--color-primary-light) 100%);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.terminal-title {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-}
-
-.terminal-icon {
-  width: var(--spacing-lg);
-  height: var(--spacing-lg);
-}
-
-.terminal-controls {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
-.connect-button,
-.disconnect-button {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-md) var(--spacing-md);
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all var(--transition-normal);
-}
-
-.connect-button {
-  background-color: var(--color-primary);
-  color: var(--color-text-on-primary);
-}
-
-.connect-button:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
-  transform: translateY(-1px);
-}
-
-.connect-button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.disconnect-button {
-  background-color: var(--color-lavender-400);
-  color: var(--color-text-on-primary);
-}
-
-.disconnect-button:hover {
-  background-color: var(--color-lavender-200);
-  transform: translateY(-1px);
-}
-
-.connect-button:active,
-.disconnect-button:active {
-  transform: translateY(0);
-}
-
-.terminal-status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-lg);
-  background-color: var(--color-surface-secondary);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.status-message {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  color: var(--color-warning);
-  font-size: var(--font-size-sm);
-}
-
-.terminal-content {
-  flex: 1;
-  min-height: 0;
-  background-color: var(--terminal-bg);
-  position: relative;
-  padding: var(--spacing-sm);
-  cursor: text;
-}
-
-.terminal-disconnected {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-/* Ensure xterm container leaves room for scrollbar
- * This reserves space for the terminal's vertical scrollbar to prevent content
- * from being hidden underneath it. The scrollbar width is subtracted from the
- * total width so text doesn't get cut off when the scrollbar appears.
- */
-:deep(.xterm-screen),
-:deep(.xterm-rows) {
-  width: calc(100% - var(--scrollbar-width)) !important;
-}
-
 </style>
