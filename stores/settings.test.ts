@@ -330,6 +330,257 @@ describe("useSettingsStore", () => {
           },
         });
       });
+
+      it("should manage recent directories correctly", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            workingDirectories: { term1: "/new/path" },
+            recentDirectories: ["/new/path", "/existing/path"],
+          },
+        };
+
+        mockFetch.mockResolvedValue(mockResponse);
+
+        const store = useSettingsStore();
+        store.session.recentDirectories = ["/existing/path"];
+        await store.setTerminalWorkingDirectory("term1", "/new/path");
+
+        expect(mockFetch).toHaveBeenCalledWith("/api/settings", {
+          method: "PATCH",
+          body: {
+            category: "session",
+            updates: {
+              workingDirectories: { term1: "/new/path" },
+              recentDirectories: ["/new/path", "/existing/path"],
+            },
+          },
+        });
+      });
+
+      it("should not duplicate directory in recent directories", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            workingDirectories: { term1: "/existing/path" },
+            recentDirectories: ["/existing/path"],
+          },
+        };
+
+        mockFetch.mockResolvedValue(mockResponse);
+
+        const store = useSettingsStore();
+        store.session.recentDirectories = ["/existing/path"];
+        await store.setTerminalWorkingDirectory("term1", "/existing/path");
+
+        // Should not duplicate the existing directory
+        expect(mockFetch).toHaveBeenCalledWith("/api/settings", {
+          method: "PATCH",
+          body: {
+            category: "session",
+            updates: {
+              workingDirectories: { term1: "/existing/path" },
+              recentDirectories: ["/existing/path"],
+            },
+          },
+        });
+      });
+
+      it("should hide welcome message", async () => {
+        const mockResponse = {
+          success: true,
+          data: { showWelcomeMessage: false },
+        };
+
+        mockFetch.mockResolvedValue(mockResponse);
+
+        const store = useSettingsStore();
+        await store.hideWelcomeMessage();
+
+        expect(mockFetch).toHaveBeenCalledWith("/api/settings", {
+          method: "PATCH",
+          body: { category: "ui", updates: { showWelcomeMessage: false } },
+        });
+      });
+
+      it("should set default directory", async () => {
+        const mockResponse = {
+          success: true,
+          data: { defaultDirectory: "/home/user" },
+        };
+
+        mockFetch.mockResolvedValue(mockResponse);
+
+        const store = useSettingsStore();
+        await store.setDefaultDirectory("/home/user");
+
+        expect(mockFetch).toHaveBeenCalledWith("/api/settings", {
+          method: "PATCH",
+          body: { category: "terminal", updates: { defaultDirectory: "/home/user" } },
+        });
+      });
+
+      it("should update UI settings directly", async () => {
+        const mockResponse = {
+          success: true,
+          data: { theme: "dark", fontSize: "large" },
+        };
+
+        mockFetch.mockResolvedValue(mockResponse);
+
+        const store = useSettingsStore();
+        await store.updateUISettings({ theme: "dark", fontSize: "large" });
+
+        expect(mockFetch).toHaveBeenCalledWith("/api/settings", {
+          method: "PATCH",
+          body: { category: "ui", updates: { theme: "dark", fontSize: "large" } },
+        });
+      });
+
+      it("should update terminal config directly", async () => {
+        const mockResponse = {
+          success: true,
+          data: { fontSize: 16, fontFamily: "JetBrains Mono" },
+        };
+
+        mockFetch.mockResolvedValue(mockResponse);
+
+        const store = useSettingsStore();
+        await store.updateTerminalConfig({ fontSize: 16, fontFamily: "JetBrains Mono" });
+
+        expect(mockFetch).toHaveBeenCalledWith("/api/settings", {
+          method: "PATCH",
+          body: { category: "terminal", updates: { fontSize: 16, fontFamily: "JetBrains Mono" } },
+        });
+      });
+
+      it("should update session data directly", async () => {
+        const mockResponse = {
+          success: true,
+          data: { activeTerminals: ["term1"], lastUsedAgent: "agent1" },
+        };
+
+        mockFetch.mockResolvedValue(mockResponse);
+
+        const store = useSettingsStore();
+        await store.updateSessionData({ activeTerminals: ["term1"], lastUsedAgent: "agent1" });
+
+        expect(mockFetch).toHaveBeenCalledWith("/api/settings", {
+          method: "PATCH",
+          body: { category: "session", updates: { activeTerminals: ["term1"], lastUsedAgent: "agent1" } },
+        });
+      });
+
+      it("should add active agent", async () => {
+        const mockResponse = {
+          success: true,
+          data: { activeAgents: ["agent1"], lastUsedAgent: "agent1" },
+        };
+
+        mockFetch.mockResolvedValue(mockResponse);
+
+        const store = useSettingsStore();
+        store.session.activeAgents = [];
+        await store.addActiveAgent("agent1");
+
+        expect(mockFetch).toHaveBeenCalledWith("/api/settings", {
+          method: "PATCH",
+          body: {
+            category: "session",
+            updates: {
+              activeAgents: ["agent1"],
+              lastUsedAgent: "agent1",
+            },
+          },
+        });
+      });
+
+      it("should not add duplicate agent", async () => {
+        const store = useSettingsStore();
+        store.session.activeAgents = ["agent1"];
+        await store.addActiveAgent("agent1");
+
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
+
+      it("should remove active agent", async () => {
+        const mockResponse = {
+          success: true,
+          data: { activeAgents: [], lastUsedAgent: null },
+        };
+
+        mockFetch.mockResolvedValue(mockResponse);
+
+        const store = useSettingsStore();
+        store.session.activeAgents = ["agent1"];
+        store.session.lastUsedAgent = "agent1";
+        await store.removeActiveAgent("agent1");
+
+        expect(mockFetch).toHaveBeenCalledWith("/api/settings", {
+          method: "PATCH",
+          body: {
+            category: "session",
+            updates: {
+              activeAgents: [],
+              lastUsedAgent: null,
+            },
+          },
+        });
+      });
+
+      it("should preserve lastUsedAgent when removing different agent", async () => {
+        const mockResponse = {
+          success: true,
+          data: { activeAgents: ["agent1"], lastUsedAgent: "agent1" },
+        };
+
+        mockFetch.mockResolvedValue(mockResponse);
+
+        const store = useSettingsStore();
+        store.session.activeAgents = ["agent1", "agent2"];
+        store.session.lastUsedAgent = "agent1";
+        await store.removeActiveAgent("agent2");
+
+        expect(mockFetch).toHaveBeenCalledWith("/api/settings", {
+          method: "PATCH",
+          body: {
+            category: "session",
+            updates: {
+              activeAgents: ["agent1"],
+              lastUsedAgent: "agent1",
+            },
+          },
+        });
+      });
+
+      it("should limit recent directories to 10 items", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            workingDirectories: { term1: "/new/path" },
+            recentDirectories: ["/new/path", "/path1", "/path2", "/path3", "/path4", "/path5", "/path6", "/path7", "/path8", "/path9"],
+          },
+        };
+
+        mockFetch.mockResolvedValue(mockResponse);
+
+        const store = useSettingsStore();
+        // Set up 10 existing recent directories
+        store.session.recentDirectories = ["/path1", "/path2", "/path3", "/path4", "/path5", "/path6", "/path7", "/path8", "/path9", "/path10"];
+        await store.setTerminalWorkingDirectory("term1", "/new/path");
+
+        // Should limit to 10 items, removing the oldest
+        expect(mockFetch).toHaveBeenCalledWith("/api/settings", {
+          method: "PATCH",
+          body: {
+            category: "session",
+            updates: {
+              workingDirectories: { term1: "/new/path" },
+              recentDirectories: ["/new/path", "/path1", "/path2", "/path3", "/path4", "/path5", "/path6", "/path7", "/path8", "/path9"],
+            },
+          },
+        });
+      });
     });
   });
 });
