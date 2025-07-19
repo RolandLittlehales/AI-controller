@@ -1,4 +1,4 @@
-name: CI/CD Pipeline with Quality Gates
+name: Quality Gates
 
 on:
   push:
