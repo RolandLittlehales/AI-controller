@@ -71,12 +71,14 @@
               :key="button.icon"
               :icon="button.icon"
               :variant="button.variant"
+              size="sm"
             >
               {{ button.label }}
             </AppButton>
             <AppButton
               variant="primary"
               trailing-icon="i-heroicons-arrow-right"
+              size="sm"
             >
               Next
             </AppButton>
@@ -97,9 +99,9 @@
           <!-- States -->
           <div class="buttons-container">
             <h4>States</h4>
-            <AppButton variant="primary" loading>Loading</AppButton>
-            <AppButton variant="secondary" disabled>Disabled</AppButton>
-            <AppButton variant="primary" block>Block Button</AppButton>
+            <AppButton variant="primary" size="sm" loading>Loading</AppButton>
+            <AppButton variant="secondary" size="sm" disabled>Disabled</AppButton>
+            <AppButton variant="primary" size="sm" block>Block Button</AppButton>
           </div>
         </section>
       </div>
@@ -125,12 +127,28 @@
           <Terminal :auto-connect="false" />
         </div>
       </section>
+
+      <section class="test-card terminal-sidebar-demo">
+        <h3>Terminal Sidebar Component</h3>
+        <div class="terminal-sidebar-showcase">
+          <TerminalSidebar />
+        </div>
+      </section>
+
+      <section class="test-card terminal-display-demo">
+        <h3>Terminal Display Component</h3>
+        <div class="terminal-display-showcase">
+          <TerminalDisplay />
+        </div>
+      </section>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
 import Terminal from "~/components/Terminal.vue";
+import TerminalSidebar from "~/components/terminal/TerminalSidebar.vue";
+import TerminalDisplay from "~/components/terminal/TerminalDisplay.vue";
 import AppButton from "~/components/ui/AppButton.vue";
 
 // Constants
@@ -347,5 +365,25 @@ const ICON_ONLY_BUTTONS = [
 /* Terminal Demo */
 .terminal-showcase {
   height: 400px;
+}
+
+/* Terminal Sidebar Demo */
+.terminal-sidebar-showcase {
+  height: 400px;
+  display: flex;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* Terminal Display Demo */
+.terminal-display-showcase {
+  height: 400px;
+  display: flex;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 </style>

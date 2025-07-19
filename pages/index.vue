@@ -35,10 +35,13 @@
 
       <div class="terminal-section">
         <ClientOnly>
-          <Terminal :auto-connect="true" />
+          <div class="terminal-layout">
+            <TerminalSidebar />
+            <TerminalDisplay />
+          </div>
           <template #fallback>
             <div class="terminal-loading">
-              <p>Loading terminal...</p>
+              <p>Loading terminals...</p>
             </div>
           </template>
         </ClientOnly>
@@ -52,7 +55,8 @@
 </template>
 
 <script setup lang="ts">
-import Terminal from "~/components/Terminal.vue";
+import TerminalSidebar from "~/components/terminal/TerminalSidebar.vue";
+import TerminalDisplay from "~/components/terminal/TerminalDisplay.vue";
 import AppButton from "~/components/ui/AppButton.vue";
 import { useSettings } from "~/composables/useSettings";
 
@@ -158,7 +162,19 @@ const handleDismissWelcome = async () => {
 .terminal-section {
   flex: 1;
   min-height: 600px;
-  height: 600px;
+  height: calc(100vh - 400px);
+  max-height: 800px;
+}
+
+.terminal-layout {
+  display: flex;
+  height: 100%;
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-lg);
 }
 
 .footer {

@@ -154,6 +154,49 @@ This is required because node-pty has native bindings that must be compiled for 
 - **Type safety**: Full TypeScript coverage
 - **Service layer**: Separate terminal service for business logic
 
+### Design System Workflow (CRITICAL - FOLLOW THIS HIERARCHY)
+
+**ALWAYS follow this workflow when implementing UI elements:**
+
+1. **Design System First Check**: ALWAYS check `~/components/ui/` for existing components before implementation
+2. **Component Usage Hierarchy**:
+   - **FIRST**: Use internal design system components (`AppButton`, `AppModal`, etc.)
+   - **SECOND**: Extend internal design system if gap exists
+   - **LAST**: Use external library components only as foundation within internal components
+
+**Forbidden Patterns:**
+```typescript
+// ❌ FORBIDDEN - Direct external UI usage in application components
+import { UButton } from "#components";
+import { UModal } from "@nuxt/ui";
+
+// ❌ FORBIDDEN - Mixing internal and external components
+<AppButton>Internal</AppButton>
+<UButton>External</UButton> <!-- Inconsistent! -->
+```
+
+**Correct Patterns:**
+```typescript
+// ✅ CORRECT - Use internal design system components
+import AppButton from "~/components/ui/AppButton.vue";
+import AppModal from "~/components/ui/AppModal.vue";
+
+// ✅ CORRECT - Consistent internal design system usage
+<AppButton @click="handleAction">Action</AppButton>
+<AppModal v-model="showModal">Content</AppModal>
+```
+
+**Extension Requirements:**
+- When creating new design system components, MUST use `App*` prefix
+- MUST update design system showcase (`/design-system` page) immediately
+- MUST follow established API patterns and prop naming conventions
+- MUST support all standard variants (size, variant, disabled, loading)
+
+**Quality Gates for Design System Work:**
+- Check for external component usage outside design system: `grep -r "UButton\|UModal" components/ --exclude-dir=ui`
+- Verify design system showcase includes new components
+- Ensure all quality gates pass: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`
+
 ### Current API Endpoints
 - `GET /api/health` - Health check endpoint
 - `WS /api/ws/terminal` - WebSocket terminal communication

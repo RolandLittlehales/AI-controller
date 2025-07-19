@@ -190,32 +190,12 @@ const handleClick = (event: MouseEvent) => {
 /* Icon styles */
 .button-icon {
   flex-shrink: 0;
+  width: 1.2em;
+  height: 1.2em;
 }
 
 .button-icon--trailing {
   margin-left: auto;
-}
-
-/* Icon-only buttons */
-.app-button:has(> .button-icon:only-child) {
-  aspect-ratio: 1;
-  padding: var(--spacing-sm);
-}
-
-.app-button--xs:has(> .button-icon:only-child) {
-  padding: var(--spacing-xs);
-}
-
-.app-button--sm:has(> .button-icon:only-child) {
-  padding: var(--spacing-sm);
-}
-
-.app-button--md:has(> .button-icon:only-child) {
-  padding: var(--spacing-md);
-}
-
-.app-button--lg:has(> .button-icon:only-child) {
-  padding: var(--spacing-lg);
 }
 
 /* Loading spinner */
@@ -231,6 +211,8 @@ const handleClick = (event: MouseEvent) => {
 }
 
 .button-loading-icon {
+  width: 1.2em;
+  height: 1.2em;
   animation: spin 1s linear infinite;
 }
 
