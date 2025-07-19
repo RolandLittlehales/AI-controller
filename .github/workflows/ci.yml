@@ -76,17 +76,6 @@ jobs:
       - name: Run tests with coverage
         run: pnpm test --coverage
 
-      - name: Check coverage thresholds
-        run: |
-          if [ -f coverage/coverage-summary.json ]; then
-            echo "✅ Coverage report generated successfully"
-            # Coverage thresholds are enforced by vitest.config.ts
-            echo "✅ All coverage thresholds met (80% minimum)"
-          else
-            echo "❌ Coverage report not found"
-            exit 1
-          fi
-
   build-check:
     name: Build Check
     runs-on: ubuntu-latest
