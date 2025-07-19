@@ -205,12 +205,13 @@ This is required because node-pty has native bindings that must be compiled for 
 ##### When to Use `it.each` and `describe.each` (MANDATORY GUIDELINES)
 
 **✅ ALWAYS use `.each` for:**
-- **Pure data-driven tests** where only input/expected values change
+- **Multiple data-driven tests** where only input/expected values change (2+ test cases)
 - **Replacing manual `forEach` loops** within test cases (anti-pattern)
-- **Repetitive execution patterns** with different data sets
-- **Configuration testing** (different system specs, usage levels, etc.)
+- **Repetitive execution patterns** with different data sets (2+ scenarios)
+- **Configuration testing** across multiple system specs, usage levels, etc.
 
 **❌ NEVER use `.each` for:**
+- **Single test cases** (use regular `it()` for individual tests)
 - **Complex integration tests** with unique setup/teardown
 - **Tests with case-specific assertions** or validation logic
 - **Multi-step workflows** where each step has different meaning
@@ -257,6 +258,16 @@ it("should handle multiple configurations", () => {
   testCases.forEach(({ cores }) => {
     // test logic here - THIS IS AN ANTI-PATTERN
   });
+});
+```
+
+**❌ Single Test Case with .each (OVERKILL):**
+```typescript
+// ❌ BAD: .each with only one test case - use regular it()
+it.each([
+  { cores: 8, expectedMax: 6 }, // Only one case!
+])("should calculate correctly for $cores cores", ({ cores, expectedMax }) => {
+  // Just use regular it() for single cases
 });
 ```
 
@@ -307,12 +318,13 @@ describe.each([
 ##### Key Decision Framework
 
 **Ask yourself:**
-- 🤔 **Are the execution steps identical?** → Use `.each`
+- 🤔 **Do I have 2+ test cases with identical execution steps?** → Use `.each`
 - 🤔 **Do I have a `forEach` loop in my test?** → Convert to `.each`
-- 🤔 **Is this testing different data inputs?** → Use `.each`
+- 🤔 **Is this testing multiple data inputs with same logic?** → Use `.each`
+- 🤔 **Is this only 1 test case?** → Use regular `it()`
 - 🤔 **Does each case need unique setup/assertions?** → Keep separate tests
 
-**Remember**: **WET for complexity, DRY for execution patterns**
+**Remember**: **WET for complexity, DRY for execution patterns (2+ cases only)**
 
 #### IMPORTANT: When asked to "update your learnings", it means update this CLAUDE.md file!
 
