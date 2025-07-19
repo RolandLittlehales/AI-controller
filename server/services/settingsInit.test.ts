@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { SettingsInitializer, initializeSettings } from "./settingsInit";
 import { settingsFileService } from "./settingsFiles";
+import { logger } from "~/utils/logger";
 
 // Mock the settingsFileService
 vi.mock("./settingsFiles", () => ({
@@ -10,11 +11,22 @@ vi.mock("./settingsFiles", () => ({
   },
 }));
 
+// Mock the logger
+vi.mock("~/utils/logger", () => ({
+  logger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 const mockSettingsFileService = vi.mocked(settingsFileService);
 
 describe("SettingsInitializer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(logger.error).mockClear();
     // Reset the initialized state
     SettingsInitializer._resetForTesting();
   });
@@ -52,6 +64,7 @@ describe("SettingsInitializer", () => {
       mockSettingsFileService.ensureSettingsDirectory.mockRejectedValue(new Error("Directory creation failed"));
 
       await expect(SettingsInitializer.initialize()).rejects.toThrow("Directory creation failed");
+      expect(logger.error).toHaveBeenCalledWith("Failed to initialize settings system", new Error("Directory creation failed"));
     });
 
     it("should handle load settings errors", async () => {
@@ -59,6 +72,7 @@ describe("SettingsInitializer", () => {
       mockSettingsFileService.loadSettings.mockRejectedValue(new Error("Load failed"));
 
       await expect(SettingsInitializer.initialize()).rejects.toThrow("Load failed");
+      expect(logger.error).toHaveBeenCalledWith("Failed to initialize settings system", new Error("Load failed"));
     });
   });
 
@@ -86,6 +100,7 @@ describe("SettingsInitializer", () => {
       }
 
       expect(SettingsInitializer.isInitialized()).toBe(false);
+      expect(logger.error).toHaveBeenCalledWith("Failed to initialize settings system", new Error("Init failed"));
     });
   });
 });
@@ -93,6 +108,7 @@ describe("SettingsInitializer", () => {
 describe("initializeSettings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(logger.error).mockClear();
     // Reset the initialized state
     SettingsInitializer._resetForTesting();
   });
