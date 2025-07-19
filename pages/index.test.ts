@@ -133,7 +133,7 @@ describe("IndexPage", () => {
     // Check for terminal section container
     expect(wrapper.find(".terminal-section").exists()).toBe(true);
     // In testing environment, ClientOnly renders the fallback
-    expect(wrapper.text()).toContain("Loading terminal...");
+    expect(wrapper.text()).toContain("Loading terminals...");
   });
 
   it("should have terminal section with proper styling", () => {
