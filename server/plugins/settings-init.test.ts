@@ -48,7 +48,7 @@ describe("settings-init plugin", () => {
 
   it("should handle async initialization completion", async () => {
     // Simulate async initialization taking some time
-    let resolveInit: () => void;
+    let resolveInit: (() => void) | undefined;
     const initPromise = new Promise<void>((resolve) => {
       resolveInit = resolve;
     });
@@ -61,7 +61,9 @@ describe("settings-init plugin", () => {
     expect(mockInitializeSettings).toHaveBeenCalledOnce();
 
     // Complete the initialization
-    resolveInit!();
+    if (resolveInit) {
+      resolveInit();
+    }
     await expect(pluginPromise).resolves.toBeUndefined();
   });
 
@@ -117,7 +119,7 @@ describe("settings-init plugin", () => {
 
     expect(result).toBeUndefined();
     expect(mockInitializeSettings).toHaveBeenCalledTimes(1);
-    
+
     // Verify no additional calls were made
     vi.clearAllMocks();
     expect(mockInitializeSettings).not.toHaveBeenCalled();
