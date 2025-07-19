@@ -1,7 +1,7 @@
 # Testing Standards for AI-Controller
 
-**Version:** 1.0  
-**Date:** July 16, 2025  
+**Version:** 1.1  
+**Date:** July 19, 2025  
 **Status:** Active
 
 This document establishes comprehensive testing standards for the AI-Controller project, following RFC 2119 conventions for requirement levels.
@@ -620,6 +620,151 @@ it("should cleanup resources properly", async () => {
 });
 ```
 
+### Data-Driven Testing with .each (MANDATORY PATTERNS)
+
+**Core Philosophy**: Tests **SHOULD** be WET (Write Everything Twice) for clarity, but **MUST** be DRY where execution steps are identical.
+
+#### When to Use it.each and describe.each
+
+**✅ MUST use `.each` for:**
+- Multiple data-driven tests where only input/expected values change (2+ test cases)
+- Replacing manual `forEach` loops within test cases (anti-pattern)
+- Repetitive execution patterns with different data sets (2+ scenarios)
+- Configuration testing across multiple system specs, usage levels, etc.
+
+**❌ MUST NOT use `.each` for:**
+- Single test cases (use regular `it()` for individual tests)
+- Complex integration tests with unique setup/teardown
+- Tests with case-specific assertions or validation logic
+- Multi-step workflows where each step has different meaning
+- Error scenarios that require specific context or setup
+
+#### Data-Driven Component State Testing
+
+```typescript
+// ✅ CORRECT: Identical execution steps, different data
+it.each([
+  { terminalCount: 2, usage: 33, indicatorClass: "indicator-safe", description: "low usage (33%)" },
+  { terminalCount: 4, usage: 67, indicatorClass: "indicator-warning", description: "medium usage (67%)" },
+  { terminalCount: 5, usage: 83, indicatorClass: "indicator-danger", description: "high usage (83%)" },
+])("should apply correct styling for $description", async ({ terminalCount, indicatorClass }: {
+  terminalCount: number; 
+  indicatorClass: string;
+}) => {
+  mockTerminalCount.value = terminalCount;
+  
+  const wrapper = mount(ResourceMonitor);
+  await wrapper.vm.$nextTick();
+  
+  expect(wrapper.find(".resource-indicator").classes()).toContain(indicatorClass);
+});
+```
+
+#### System Configuration Testing
+
+```typescript
+// ✅ CORRECT: Replace forEach anti-pattern
+it.each([
+  { cores: 16, expectedMax: 12, description: "16 cores → 12 max terminals (4 reserved)" },
+  { cores: 12, expectedMax: 9, description: "12 cores → 9 max terminals (3 reserved)" },
+  { cores: 6, expectedMax: 4, description: "6 cores → 4 max terminals (2 reserved, minimum)" },
+])("should calculate 25% reservation correctly for $description", ({ cores, expectedMax }: {
+  cores: number; 
+  expectedMax: number;
+}) => {
+  Object.defineProperty(global.navigator, "hardwareConcurrency", {
+    value: cores,
+    writable: true,
+  });
+  
+  const { detectSystemCapability } = useSystemResources();
+  const result = detectSystemCapability();
+  
+  expect(result.totalCores).toBe(cores);
+  expect(result.maxTerminals).toBe(expectedMax);
+});
+```
+
+#### Anti-Patterns to Avoid
+
+**❌ INCORRECT: Manual forEach in Tests**
+```typescript
+// ❌ BAD: Manual forEach loop - MUST be converted to it.each
+it("should handle multiple configurations", () => {
+  const testCases = [{ cores: 8 }, { cores: 16 }];
+  testCases.forEach(({ cores }) => {
+    // test logic here - THIS IS AN ANTI-PATTERN
+  });
+});
+```
+
+**❌ INCORRECT: Single Test Case with .each**
+```typescript
+// ❌ BAD: .each with only one test case - use regular it()
+it.each([
+  { cores: 8, expectedMax: 6 }, // Only one case!
+])("should calculate correctly for $cores cores", ({ cores, expectedMax }) => {
+  // Just use regular it() for single cases
+});
+```
+
+**❌ INCORRECT: Complex Integration Tests with .each**
+```typescript
+// ❌ BAD: Complex workflow doesn't belong in .each
+it.each([...])("should handle terminal lifecycle", () => {
+  const store = useTerminalManagerStore();
+  const terminal1Id = store.createTerminal("Terminal 1");
+  store.setActiveTerminal(terminal1Id);
+  store.removeTerminal(terminal1Id);
+  // Complex multi-step logic - keep as individual tests
+});
+```
+
+#### describe.each for Test Suite Organization
+
+**✅ Use `describe.each` when:**
+- Testing same functionality across different configurations
+- Multiple components with identical behavior patterns
+- Cross-platform testing scenarios
+
+```typescript
+// ✅ CORRECT: Testing same component behavior across different props
+describe.each([
+  { variant: "primary", expectedClass: "btn-primary" },
+  { variant: "secondary", expectedClass: "btn-secondary" },
+])("AppButton with $variant variant", ({ variant, expectedClass }) => {
+  it("should render with correct styling", () => {
+    const wrapper = mount(AppButton, { props: { variant } });
+    expect(wrapper.classes()).toContain(expectedClass);
+  });
+  
+  it("should handle click events", () => {
+    const wrapper = mount(AppButton, { props: { variant } });
+    wrapper.trigger("click");
+    expect(wrapper.emitted("click")).toBeTruthy();
+  });
+});
+```
+
+#### Quality Benefits
+
+1. **Eliminates forEach Anti-Pattern**: No more manual loops within tests
+2. **Improved Test Names**: Dynamic test descriptions show actual data
+3. **Better Coverage Visibility**: Each data case appears as separate test
+4. **Easier Debugging**: Failed tests show exact data that caused failure
+5. **Enhanced Maintainability**: Adding new test cases is trivial
+
+#### Decision Framework
+
+**Ask yourself:**
+- 🤔 **Do I have 2+ test cases with identical execution steps?** → Use `.each`
+- 🤔 **Do I have a `forEach` loop in my test?** → Convert to `.each`
+- 🤔 **Is this testing multiple data inputs with same logic?** → Use `.each`
+- 🤔 **Is this only 1 test case?** → Use regular `it()`
+- 🤔 **Does each case need unique setup/assertions?** → Keep separate tests
+
+**Remember**: **WET for complexity, DRY for execution patterns (2+ cases only)**
+
 ## Conclusion
 
 This testing standards document establishes a comprehensive framework for testing the AI-Controller project. By following these standards, we ensure:
@@ -635,4 +780,5 @@ All contributors **MUST** follow these standards to maintain the quality and rel
 ---
 
 **Document History:**
+- v1.1 (2025-07-19): Added comprehensive data-driven testing patterns with .each standards
 - v1.0 (2025-07-16): Initial standards document created

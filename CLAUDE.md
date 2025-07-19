@@ -198,6 +198,134 @@ This is required because node-pty has native bindings that must be compiled for 
 - **Error Scenarios**: Handle write failures, resize failures, etc.
 - **Integration Flows**: Component → WebSocket → Service → node-pty
 
+#### ADVANCED TESTING PATTERNS - WET vs DRY Balance (CRITICAL - FOLLOW THESE PATTERNS)
+
+**Core Philosophy**: Tests should be **WET (Write Everything Twice)** for clarity, but **DRY where execution steps are identical**.
+
+##### When to Use `it.each` and `describe.each` (MANDATORY GUIDELINES)
+
+**✅ ALWAYS use `.each` for:**
+- **Multiple data-driven tests** where only input/expected values change (2+ test cases)
+- **Replacing manual `forEach` loops** within test cases (anti-pattern)
+- **Repetitive execution patterns** with different data sets (2+ scenarios)
+- **Configuration testing** across multiple system specs, usage levels, etc.
+
+**❌ NEVER use `.each` for:**
+- **Single test cases** (use regular `it()` for individual tests)
+- **Complex integration tests** with unique setup/teardown
+- **Tests with case-specific assertions** or validation logic
+- **Multi-step workflows** where each step has different meaning
+- **Error scenarios** that require specific context or setup
+
+##### Excellent `.each` Patterns (FOLLOW THESE EXAMPLES)
+
+**Data-Driven Component State Testing:**
+```typescript
+// ✅ GOOD: Identical execution, different data
+it.each([
+  { terminalCount: 2, usage: 33, indicatorClass: "indicator-safe", description: "low usage (33%)" },
+  { terminalCount: 4, usage: 67, indicatorClass: "indicator-warning", description: "medium usage (67%)" },
+  { terminalCount: 5, usage: 83, indicatorClass: "indicator-danger", description: "high usage (83%)" },
+])("should apply correct styling for $description", async ({ terminalCount, indicatorClass }) => {
+  mockTerminalCount.value = terminalCount;
+  const wrapper = mount(ResourceMonitor);
+  await wrapper.vm.$nextTick();
+  expect(wrapper.find(".resource-indicator").classes()).toContain(indicatorClass);
+});
+```
+
+**System Configuration Testing:**
+```typescript
+// ✅ GOOD: Replace forEach anti-pattern
+it.each([
+  { cores: 16, expectedMax: 12, description: "16 cores → 12 max terminals (4 reserved)" },
+  { cores: 12, expectedMax: 9, description: "12 cores → 9 max terminals (3 reserved)" },
+  { cores: 6, expectedMax: 4, description: "6 cores → 4 max terminals (2 reserved, minimum)" },
+])("should calculate 25% reservation correctly for $description", ({ cores, expectedMax }) => {
+  Object.defineProperty(global.navigator, "hardwareConcurrency", { value: cores, writable: true });
+  const result = detectSystemCapability();
+  expect(result.maxTerminals).toBe(expectedMax);
+});
+```
+
+##### Anti-Patterns to Avoid (NEVER DO THIS)
+
+**❌ Manual forEach in Tests (ALWAYS CONVERT TO .each):**
+```typescript
+// ❌ BAD: Manual forEach loop - should be it.each
+it("should handle multiple configurations", () => {
+  const testCases = [{ cores: 8 }, { cores: 16 }];
+  testCases.forEach(({ cores }) => {
+    // test logic here - THIS IS AN ANTI-PATTERN
+  });
+});
+```
+
+**❌ Single Test Case with .each (OVERKILL):**
+```typescript
+// ❌ BAD: .each with only one test case - use regular it()
+it.each([
+  { cores: 8, expectedMax: 6 }, // Only one case!
+])("should calculate correctly for $cores cores", ({ cores, expectedMax }) => {
+  // Just use regular it() for single cases
+});
+```
+
+**❌ Complex Integration Tests with .each:**
+```typescript
+// ❌ BAD: Complex workflow doesn't belong in .each
+it.each([...])("should handle terminal lifecycle", () => {
+  const store = useTerminalManagerStore();
+  const terminal1Id = store.createTerminal("Terminal 1");
+  store.setActiveTerminal(terminal1Id);
+  store.removeTerminal(terminal1Id);
+  // Complex multi-step logic - keep as individual tests
+});
+```
+
+##### `describe.each` for Test Suite Organization
+
+**✅ Use `describe.each` when:**
+- Testing same functionality across different configurations
+- Multiple components with identical behavior patterns
+- Cross-browser or cross-platform testing scenarios
+
+```typescript
+// ✅ GOOD: Testing same component behavior across different props
+describe.each([
+  { variant: "primary", expectedClass: "btn-primary" },
+  { variant: "secondary", expectedClass: "btn-secondary" },
+])("AppButton with $variant variant", ({ variant, expectedClass }) => {
+  it("should render with correct styling", () => {
+    const wrapper = mount(AppButton, { props: { variant } });
+    expect(wrapper.classes()).toContain(expectedClass);
+  });
+  
+  it("should handle click events", () => {
+    // Test click behavior for this variant
+  });
+});
+```
+
+##### Quality Benefits of Proper `.each` Usage
+
+1. **Eliminates forEach Anti-Pattern**: No more manual loops within tests
+2. **Improved Test Names**: Dynamic test descriptions show actual data
+3. **Better Coverage Visibility**: Each data case appears as separate test
+4. **Easier Debugging**: Failed tests show exact data that caused failure
+5. **Enhanced Maintainability**: Adding new test cases is trivial
+
+##### Key Decision Framework
+
+**Ask yourself:**
+- 🤔 **Do I have 2+ test cases with identical execution steps?** → Use `.each`
+- 🤔 **Do I have a `forEach` loop in my test?** → Convert to `.each`
+- 🤔 **Is this testing multiple data inputs with same logic?** → Use `.each`
+- 🤔 **Is this only 1 test case?** → Use regular `it()`
+- 🤔 **Does each case need unique setup/assertions?** → Keep separate tests
+
+**Remember**: **WET for complexity, DRY for execution patterns (2+ cases only)**
+
 #### IMPORTANT: When asked to "update your learnings", it means update this CLAUDE.md file!
 
 ## File System Testing with memfs (CRITICAL - FOLLOW THIS APPROACH)
