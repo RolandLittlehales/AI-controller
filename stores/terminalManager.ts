@@ -1,29 +1,46 @@
 import { defineStore } from "pinia";
 import { ref, readonly, computed } from "vue";
 import { useSystemResources } from "~/composables/useSystemResources";
+import { useGitRepository } from "~/composables/useGitRepository";
 
-/**
- * Basic Terminal State Management Store
- *
- * Manages multiple terminal instances with:
- * - In-memory terminal tracking (no persistence yet)
- * - System resource limit enforcement
- * - Active terminal switching logic
- * - CRUD operations for terminals
- */
+export interface GitTerminalInfo {
+  hasWorktree: boolean;
+  branchName?: string;
+  worktreePath?: string;
+  isTemporary?: boolean;
+}
 
-interface BasicTerminal {
+export interface BasicTerminal {
   id: string;
   name: string;
   status: "connecting" | "connected" | "disconnected";
   isActive: boolean;
   createdAt: Date;
+  git?: GitTerminalInfo;
 }
 
+export interface CreateTerminalOptions {
+  name: string;
+  branchName?: string;
+  baseBranch?: string;
+  useGit?: boolean;
+}
+
+/**
+ * Terminal State Management Store with Git Integration
+ *
+ * Manages multiple terminal instances with:
+ * - In-memory terminal tracking (no persistence yet)
+ * - System resource limit enforcement
+ * - Active terminal switching logic
+ * - Git worktree integration for isolated development
+ * - CRUD operations for terminals
+ */
 export const useTerminalManagerStore = defineStore("terminalManager", () => {
   const terminals = ref(new Map<string, BasicTerminal>());
   const activeTerminalId = ref<string | null>(null);
   const systemResources = useSystemResources();
+  const gitRepository = useGitRepository();
 
   // Initialize system resources on store creation
   systemResources.detectSystemCapability();
@@ -36,31 +53,63 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
   );
 
   /**
-   * Create a new terminal with unique ID and name
-   * @param name - Display name for the terminal
-   * @returns Terminal ID
-   * @throws Error if terminal limit reached
+   * Check if a terminal name already exists
+   * @param name - Terminal name to check
+   * @returns True if name is already in use
    */
-  const createTerminal = (name: string): string => {
+  const isTerminalNameTaken = (name: string): boolean => {
+    return Array.from(terminals.value.values()).some(terminal =>
+      terminal.name.toLowerCase().trim() === name.toLowerCase().trim(),
+    );
+  };
+
+  /**
+   * Create a new terminal with unique ID and options
+   * @param options - Terminal creation options
+   * @returns Terminal ID
+   * @throws Error if terminal limit reached or git operation fails
+   */
+  const createTerminal = (options: CreateTerminalOptions | string): string => {
     if (!canCreateTerminal.value) {
       throw new Error("Terminal limit reached");
     }
 
-    // Generate unique terminal ID
-    const terminalId = `term_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    // Handle legacy string parameter
+    const terminalOptions: CreateTerminalOptions = typeof options === "string"
+      ? { name: options, useGit: false }
+      : options;
+
+    // Check for duplicate names
+    if (isTerminalNameTaken(terminalOptions.name)) {
+      throw new Error(`Terminal name "${terminalOptions.name}" is already in use`);
+    }
+
+    // Generate unique terminal ID with consistent length
+    const randomPart = Math.random().toString(36).substring(2, 8).padEnd(6, "0");
+    const terminalId = `term_${Date.now()}_${randomPart}`;
 
     const terminal: BasicTerminal = {
       id: terminalId,
-      name,
+      name: terminalOptions.name,
       status: "connecting",
       isActive: false,
       createdAt: new Date(),
     };
 
+    // Add git information if git is enabled and repository is available
+    if (terminalOptions.useGit && gitRepository.repositoryInfo.value.isGitRepository) {
+      const gitInfo: GitTerminalInfo = {
+        hasWorktree: true,
+        branchName: terminalOptions.branchName || `terminal-${terminalId}`,
+        isTemporary: !terminalOptions.branchName, // Temporary if no specific branch provided
+      };
+      terminal.git = gitInfo;
+    } else if (terminalOptions.useGit) {
+      // User requested git but no repository available
+      throw new Error("Git integration requested but not in a git repository");
+    }
+
     terminals.value.set(terminalId, terminal);
-    // Console logging for verification during development
-    // eslint-disable-next-line no-console
-    console.log(`Created terminal: ${terminalId} (${name})`);
 
     return terminalId;
   };
@@ -75,8 +124,6 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
       const prev = terminals.value.get(activeTerminalId.value);
       if (prev) {
         prev.isActive = false;
-        // eslint-disable-next-line no-console
-        console.log(`Deactivated terminal: ${activeTerminalId.value}`);
       }
     }
 
@@ -86,8 +133,6 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
       const terminal = terminals.value.get(terminalId);
       if (terminal) {
         terminal.isActive = true;
-        // eslint-disable-next-line no-console
-        console.log(`Activated terminal: ${terminalId} (${terminal.name})`);
       }
     }
   };
@@ -101,8 +146,6 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
     if (!terminal) return;
 
     terminals.value.delete(terminalId);
-    // eslint-disable-next-line no-console
-    console.log(`Removed terminal: ${terminalId} (${terminal.name})`);
 
     // If removing active terminal, switch to next available
     if (activeTerminalId.value === terminalId) {
@@ -120,8 +163,6 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
     const terminal = terminals.value.get(terminalId);
     if (terminal) {
       terminal.status = status;
-      // eslint-disable-next-line no-console
-      console.log(`Updated terminal ${terminalId} status to: ${status}`);
     }
   };
 
@@ -154,10 +195,29 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    */
   const terminalCount = computed(() => terminals.value.size);
 
+  /**
+   * Refresh git repository information via API call
+   * @param basePath - Repository path to validate
+   */
+  const refreshGitRepository = async (basePath?: string): Promise<void> => {
+    await gitRepository.validateRepository(basePath);
+  };
+
+  /**
+   * Get available branches via API call
+   * @returns Promise<string[]> List of branch names
+   */
+  const getAvailableBranches = async (): Promise<string[]> => {
+    return await gitRepository.getAvailableBranches();
+  };
+
   return {
     // Readonly state
     terminals: readonly(terminals),
     activeTerminalId: readonly(activeTerminalId),
+
+    // Git repository information
+    gitRepository: gitRepository.repositoryInfo,
 
     // Computed properties
     canCreateTerminal,
@@ -165,11 +225,18 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
     getActiveTerminal,
     terminalCount,
 
+    // Validation
+    isTerminalNameTaken,
+
     // Actions
     createTerminal,
     setActiveTerminal,
     removeTerminal,
     updateTerminalStatus,
     getTerminal,
+
+    // Git actions
+    refreshGitRepository,
+    getAvailableBranches,
   };
 });

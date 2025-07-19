@@ -28,6 +28,16 @@ export default defineNuxtConfig({
     ],
     optimizeDeps: {
       include: ["@xterm/xterm", "@xterm/addon-fit", "@xterm/addon-web-links"],
+      exclude: ["simple-git"],
+    },
+    build: {
+      rollupOptions: {
+        external: ["simple-git"],
+      },
+    },
+    define: {
+      // Ensure simple-git is not bundled for client
+      "import.meta.server": "false",
     },
   },
 

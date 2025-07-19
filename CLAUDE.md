@@ -849,6 +849,76 @@ test/                                   # ❌ Separate test folder
     - Test functionality immediately, don't assume logic equals working features
     - Use proper CSS patterns instead of forcing with anti-patterns
 
+#### JSDoc Documentation Standards (CRITICAL - FOLLOW THESE PATTERNS)
+
+20. **JSDoc Comment Placement**: Always place JSDoc comments immediately above the code element they document
+    - ✅ **CORRECT**: JSDoc above function/class/export that it describes
+    - ❌ **INCORRECT**: JSDoc above interface when it should document a function below the interface
+    - **Rule**: JSDoc applies to the NEXT line of code after the comment block
+
+21. **JSDoc Comment Examples**:
+```typescript
+// ✅ CORRECT - JSDoc documents the function
+/**
+ * Terminal State Management Store with Git Integration
+ * 
+ * Manages multiple terminal instances with:
+ * - In-memory terminal tracking
+ * - System resource limit enforcement
+ */
+export const useTerminalManagerStore = defineStore("terminalManager", () => {
+
+// ❌ INCORRECT - JSDoc appears to document interface but should be above function
+/**
+ * Terminal State Management Store...
+ */
+export interface SomeInterface {
+  // interface content
+}
+export const useTerminalManagerStore = defineStore(...
+```
+
+22. **JSDoc Best Practices**:
+    - Use clear, concise descriptions that explain **purpose** and **behavior**
+    - Include `@param` tags for function parameters with types and descriptions
+    - Include `@returns` tags for return values with type and description
+    - Use `@throws` for functions that can throw specific errors
+    - Document complex business logic and assumptions
+    - Keep JSDoc up-to-date when code changes
+
+#### Deprecated Function Prevention (CRITICAL - MODERNIZE CODE)
+
+23. **Deprecated JavaScript Functions**: Always use modern alternatives
+    - ❌ **AVOID**: `substr()` - deprecated and will be removed
+    - ✅ **USE**: `substring()` or `slice()` for string manipulation
+    - ❌ **AVOID**: `escape()` and `unescape()` - use `encodeURIComponent()` and `decodeURIComponent()`
+    - ❌ **AVOID**: `String.prototype.fontcolor()`, `String.prototype.big()`, etc. - use CSS instead
+
+24. **String Method Modernization**:
+```typescript
+// ❌ DEPRECATED - Don't use substr()
+const id = Math.random().toString(36).substr(2, 6);
+
+// ✅ MODERN - Use substring() with consistent length
+const randomPart = Math.random().toString(36).substring(2, 8).padEnd(6, "0");
+const id = `prefix_${Date.now()}_${randomPart}`;
+```
+
+25. **Deprecated Function Detection & Prevention**:
+    - **ESLint Rules**: Configure ESLint to detect deprecated functions
+    - **Code Reviews**: Always check for deprecated function usage
+    - **IDE Warnings**: Pay attention to strikethrough or warning indicators
+    - **Documentation**: Check MDN for deprecation status when using older APIs
+    - **Search & Replace**: Proactively search codebase for deprecated patterns
+
+26. **Modern Alternatives Reference**:
+    - `substr()` → `substring()` or `slice()`
+    - `var` → `const` or `let`
+    - `new Date().getYear()` → `new Date().getFullYear()`
+    - `document.write()` → DOM manipulation methods
+    - `innerHTML` (when building HTML) → `textContent` or proper DOM methods
+    - Callback-based APIs → Promise-based or async/await patterns
+
 ### Code Review Success Metrics (MANDATORY - ALL MUST PASS)
 **🚨 CRITICAL: ALL quality gates MUST pass 100% before any work is considered complete:**
 
