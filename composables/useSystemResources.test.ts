@@ -67,26 +67,22 @@ describe("useSystemResources", () => {
     expect(result.maxTerminals).toBe(2); // 4 - 2 reserved
   });
 
-  it("should calculate 25% reservation correctly for various core counts", () => {
-    const testCases = [
-      { cores: 16, expectedReserved: 4, expectedMax: 12 }, // 25% of 16 = 4
-      { cores: 12, expectedReserved: 3, expectedMax: 9 },  // 25% of 12 = 3
-      { cores: 6, expectedReserved: 2, expectedMax: 4 },   // 25% of 6 = 1.5 → 2 (minimum)
-      { cores: 32, expectedReserved: 8, expectedMax: 24 },  // 25% of 32 = 8
-    ];
-
-    testCases.forEach(({ cores, expectedMax }) => {
-      Object.defineProperty(global.navigator, "hardwareConcurrency", {
-        value: cores,
-        writable: true,
-      });
-
-      const { detectSystemCapability } = useSystemResources();
-      const result = detectSystemCapability();
-
-      expect(result.totalCores).toBe(cores);
-      expect(result.maxTerminals).toBe(expectedMax);
+  it.each([
+    { cores: 16, expectedReserved: 4, expectedMax: 12, description: "16 cores → 12 max terminals (4 reserved)" },
+    { cores: 12, expectedReserved: 3, expectedMax: 9, description: "12 cores → 9 max terminals (3 reserved)" },
+    { cores: 6, expectedReserved: 2, expectedMax: 4, description: "6 cores → 4 max terminals (2 reserved, minimum)" },
+    { cores: 32, expectedReserved: 8, expectedMax: 24, description: "32 cores → 24 max terminals (8 reserved)" },
+  ])("should calculate 25% reservation correctly for $description", ({ cores, expectedMax }: { cores: number; expectedMax: number }) => {
+    Object.defineProperty(global.navigator, "hardwareConcurrency", {
+      value: cores,
+      writable: true,
     });
+
+    const { detectSystemCapability } = useSystemResources();
+    const result = detectSystemCapability();
+
+    expect(result.totalCores).toBe(cores);
+    expect(result.maxTerminals).toBe(expectedMax);
   });
 
   it("should return readonly systemInfo", () => {

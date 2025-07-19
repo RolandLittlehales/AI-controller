@@ -83,37 +83,18 @@ describe("ResourceMonitor", () => {
     expect(progressFill.attributes("style")).toContain("width: 50%");
   });
 
-  it("should apply safe indicator class for low usage", async () => {
-    // Mock low usage (2/6 = 33%)
-    mockTerminalCount.value = 2;
+  it.each([
+    { terminalCount: 2, usage: 33, indicatorClass: "indicator-safe", progressClass: "progress-safe", description: "low usage (33%)" },
+    { terminalCount: 4, usage: 67, indicatorClass: "indicator-warning", progressClass: "progress-warning", description: "medium usage (67%)" },
+    { terminalCount: 5, usage: 83, indicatorClass: "indicator-danger", progressClass: "progress-danger", description: "high usage (83%)" },
+  ])("should apply correct styling for $description", async ({ terminalCount, indicatorClass, progressClass }: { terminalCount: number; indicatorClass: string; progressClass: string }) => {
+    mockTerminalCount.value = terminalCount;
 
     const wrapper = mount(ResourceMonitor);
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find(".resource-indicator").classes()).toContain("indicator-safe");
-    expect(wrapper.find(".progress-fill").classes()).toContain("progress-safe");
-  });
-
-  it("should apply warning indicator class for medium usage", async () => {
-    // Mock medium usage (4/6 = 67%)
-    mockTerminalCount.value = 4;
-
-    const wrapper = mount(ResourceMonitor);
-    await wrapper.vm.$nextTick();
-
-    expect(wrapper.find(".resource-indicator").classes()).toContain("indicator-warning");
-    expect(wrapper.find(".progress-fill").classes()).toContain("progress-warning");
-  });
-
-  it("should apply danger indicator class for high usage", async () => {
-    // Mock high usage (5/6 = 83%)
-    mockTerminalCount.value = 5;
-
-    const wrapper = mount(ResourceMonitor);
-    await wrapper.vm.$nextTick();
-
-    expect(wrapper.find(".resource-indicator").classes()).toContain("indicator-danger");
-    expect(wrapper.find(".progress-fill").classes()).toContain("progress-danger");
+    expect(wrapper.find(".resource-indicator").classes()).toContain(indicatorClass);
+    expect(wrapper.find(".progress-fill").classes()).toContain(progressClass);
   });
 
   it("should handle zero terminals correctly", async () => {
