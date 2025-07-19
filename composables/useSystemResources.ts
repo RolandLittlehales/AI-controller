@@ -23,11 +23,11 @@ export function useSystemResources() {
   /**
    * Detect system capability and calculate terminal limits
    * Uses navigator.hardwareConcurrency to detect CPU cores
-   * Falls back to 4 cores if API not available (older browsers)
+   * Falls back to 4 cores if API not available (older browsers or SSR)
    */
   const detectSystemCapability = (): SystemInfo => {
-    // Get total CPU cores from browser API
-    const totalCores = navigator.hardwareConcurrency || 4;
+    // Get total CPU cores from browser API (safe for SSR)
+    const totalCores = (typeof navigator !== "undefined" && navigator.hardwareConcurrency) || 4;
 
     // Reserve 25% of cores (minimum 2) for system operations
     const reservedCores = Math.max(2, Math.ceil(totalCores * 0.25));

@@ -123,6 +123,25 @@ export const styles = style({
 });
 ```
 
+### 6. [Design System Standards](./design-system.md)
+**Focus:** Design system architecture and component usage hierarchy
+
+**Key Requirements:**
+- Design system first approach - always check internal components before external
+- Internal design system components (`App*` prefix) over external UI libraries
+- Consistent component APIs and prop patterns
+- Comprehensive design system showcase documentation
+- Proper external library integration patterns
+
+**Quick Reference:**
+```typescript
+// ✅ Correct - Use internal design system
+import AppButton from "~/components/ui/AppButton.vue";
+
+// ❌ Forbidden - Direct external usage
+import { UButton } from "#components";
+```
+
 ## Quick Reference Guide
 
 ### RFC 2119 Keywords Summary
@@ -191,6 +210,9 @@ pnpm build       # → Successful production build
 - [ ] No `any` types used
 - [ ] Proper error handling implemented
 - [ ] External library integration follows standards
+- [ ] Design system usage follows hierarchy (internal components first)
+- [ ] No direct external UI component usage in application code
+- [ ] Design system showcase updated for new components
 - [ ] Tests achieve 80%+ coverage
 - [ ] Integration tests implemented
 - [ ] Documentation updated

@@ -8,7 +8,7 @@
           Create a new terminal or select one from the sidebar to get started
         </p>
         <div class="no-terminal-actions">
-          <UButton
+          <AppButton
             variant="primary"
             size="lg"
             icon="i-heroicons-plus"
@@ -16,7 +16,7 @@
             @click="createFirstTerminal"
           >
             Create First Terminal
-          </UButton>
+          </AppButton>
         </div>
       </div>
     </div>
@@ -42,26 +42,25 @@
         </div>
 
         <div class="terminal-actions">
-          <UButton
+          <AppButton
             icon="i-heroicons-arrow-path"
             size="sm"
-            variant="soft"
+            variant="secondary"
             :disabled="activeTerminal.status === 'connecting'"
             title="Reconnect terminal"
             @click="reconnectTerminal"
           >
             Reconnect
-          </UButton>
-          <UButton
+          </AppButton>
+          <AppButton
             icon="i-heroicons-x-mark"
             size="sm"
-            variant="soft"
-            color="red"
+            variant="danger"
             title="Close terminal"
             @click="closeTerminal"
           >
             Close
-          </UButton>
+          </AppButton>
         </div>
       </div>
 
@@ -135,6 +134,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useTerminalManagerStore } from "~/stores/terminalManager";
+import AppButton from "~/components/ui/AppButton.vue";
 import { logger } from "~/utils/logger";
 
 /**

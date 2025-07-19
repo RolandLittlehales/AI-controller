@@ -4,7 +4,7 @@
 
     <div class="sidebar-header">
       <h3 class="sidebar-title">Terminals</h3>
-      <UButton
+      <AppButton
         icon="i-heroicons-plus"
         size="sm"
         variant="primary"
@@ -14,7 +14,7 @@
         @click="createNewTerminal"
       >
         New
-      </UButton>
+      </AppButton>
     </div>
 
     <div class="terminal-list">
@@ -31,10 +31,10 @@
           <span class="terminal-name">{{ terminal.name }}</span>
           <div class="terminal-controls">
             <span :class="`status-${terminal.status}`" class="status-dot" />
-            <UButton
+            <AppButton
               icon="i-heroicons-x-mark"
               size="xs"
-              variant="ghost"
+              variant="secondary"
               :title="`Close ${terminal.name}`"
               @click.stop="removeTerminal(terminal.id)"
             />
@@ -61,6 +61,7 @@
 import { computed, ref } from "vue";
 import { useTerminalManagerStore } from "~/stores/terminalManager";
 import ResourceMonitor from "./ResourceMonitor.vue";
+import AppButton from "~/components/ui/AppButton.vue";
 import { logger } from "~/utils/logger";
 
 /**

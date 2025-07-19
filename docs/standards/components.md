@@ -15,12 +15,13 @@ This document establishes mandatory standards for Vue 3 component development in
 4. [TypeScript Integration](#typescript-integration)
 5. [Props and Emits](#props-and-emits)
 6. [Component Lifecycle](#component-lifecycle)
-7. [External Library Integration](#external-library-integration)
-8. [Performance Standards](#performance-standards)
-9. [Testing Requirements](#testing-requirements)
-10. [File Organization](#file-organization)
-11. [Styling Standards](#styling-standards)
-12. [Accessibility Requirements](#accessibility-requirements)
+7. [Design System Integration](#design-system-integration)
+8. [External Library Integration](#external-library-integration)
+9. [Performance Standards](#performance-standards)
+10. [Testing Requirements](#testing-requirements)
+11. [File Organization](#file-organization)
+12. [Styling Standards](#styling-standards)
+13. [Accessibility Requirements](#accessibility-requirements)
 
 ## Overview
 
@@ -273,9 +274,202 @@ function cleanup() {
 }
 ```
 
+## Design System Integration
+
+### 7.1 Design System First Approach
+
+Components MUST prioritize the internal design system over external UI libraries. The design system serves as the single source of truth for UI components and visual consistency.
+
+**Component Usage Hierarchy:**
+1. **FIRST**: Check internal design system (`~/components/ui/`)
+2. **SECOND**: Extend internal design system if gap exists
+3. **LAST**: Use external library components only as foundation within internal components
+
+```typescript
+// ✅ CORRECT - Use internal design system components
+import AppButton from "~/components/ui/AppButton.vue";
+
+// ❌ FORBIDDEN - Direct external UI usage in application components
+import { UButton } from "#components";
+import { UModal } from "@nuxt/ui";
+
+// ✅ ACCEPTABLE - Only within internal design system implementation
+// File: ~/components/ui/AppModal.vue
+import { UModal } from "@nuxt/ui"; // OK to use as foundation
+```
+
+### 7.2 Design System Extension Requirements
+
+When extending the design system, components MUST:
+
+1. **Create internal wrapper component** rather than using external components directly
+2. **Follow established naming conventions** (App* prefix for base components)
+3. **Implement consistent API patterns** matching existing design system components
+4. **Update design system showcase** immediately upon creation
+5. **Document usage patterns** and component variations
+
+**Example: Creating New Design System Component**
+
+```typescript
+// File: ~/components/ui/AppAccordion.vue
+<template>
+  <UAccordion v-bind="accordionProps" @update:open="handleUpdate">
+    <slot />
+  </UAccordion>
+</template>
+
+<script setup lang="ts">
+// Internal component that enhances/wraps external library
+import { UAccordion } from "#components";
+
+interface Props {
+  items: AccordionItem[];
+  multiple?: boolean;
+  variant?: "default" | "ghost" | "soft";
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  multiple: false,
+  variant: "default",
+});
+
+// Transform props to match internal design patterns
+const accordionProps = computed(() => ({
+  items: props.items,
+  multiple: props.multiple,
+  // Add internal design system enhancements
+  class: `app-accordion app-accordion--${props.variant}`,
+}));
+</script>
+```
+
+### 7.3 Design System Showcase Requirements
+
+Components MUST be documented in the design system showcase (`/design-system` page) when:
+
+1. **Creating new base components** (App* components)
+2. **Adding new component patterns** or variations
+3. **Implementing new UI interactions** or behaviors
+4. **Establishing new design tokens** or styling patterns
+
+**Showcase Documentation Pattern:**
+
+```vue
+<!-- Add to pages/design-system.vue -->
+<section class="test-card new-component-demo">
+  <h3>AppAccordion Component</h3>
+  
+  <!-- Variants -->
+  <div class="component-container">
+    <h4>Variants</h4>
+    <AppAccordion
+      v-for="variant in ACCORDION_VARIANTS"
+      :key="variant.variant"
+      :variant="variant.variant"
+      :items="variant.items"
+    />
+  </div>
+  
+  <!-- States -->
+  <div class="component-container">
+    <h4>States</h4>
+    <AppAccordion :items="items" multiple />
+    <AppAccordion :items="items" disabled />
+  </div>
+</section>
+```
+
+### 7.4 External Library Integration Standards
+
+When external libraries MUST be used as foundation (within internal design system components):
+
+1. **Isolate usage** to design system components only
+2. **Create consistent APIs** that match internal patterns
+3. **Add enhanced functionality** that serves project needs
+4. **Maintain backward compatibility** when updating external dependencies
+5. **Document integration patterns** for team consistency
+
+**Anti-Patterns to AVOID:**
+
+```typescript
+// ❌ BAD - Direct external component usage in application
+<template>
+  <UButton @click="handleAction">Click Me</UButton>
+  <UModal v-model="showModal">Modal Content</UModal>
+</template>
+
+// ❌ BAD - Mixing internal and external components
+<template>
+  <AppButton>Internal</AppButton>
+  <UButton>External</UButton> <!-- Inconsistent! -->
+</template>
+
+// ❌ BAD - External components with custom styling
+<template>
+  <UButton class="custom-button-style">Styled External</UButton>
+</template>
+```
+
+**Correct Patterns:**
+
+```typescript
+// ✅ GOOD - Consistent internal design system usage
+<template>
+  <AppButton @click="handleAction">Click Me</AppButton>
+  <AppModal v-model="showModal">Modal Content</AppModal>
+</template>
+
+// ✅ GOOD - Enhanced internal component (within design system)
+// File: ~/components/ui/AppButton.vue
+<template>
+  <UButton 
+    :class="buttonClasses" 
+    v-bind="buttonProps"
+    @click="handleClick"
+  >
+    <slot />
+  </UButton>
+</template>
+```
+
+### 7.5 Design System Quality Gates
+
+Before committing components that use UI elements, verify:
+
+```bash
+# Check for external UI component usage outside design system
+grep -r "UButton\|UModal\|UAccordion" components/ --exclude-dir=ui
+# Should return no results (except in design system components)
+
+# Verify design system showcase is updated
+# Check that /design-system page includes new components
+
+# Ensure consistent component APIs
+# New components should match established patterns
+```
+
+### 7.6 Component Migration Standards
+
+When migrating existing external component usage:
+
+1. **Audit current usage** of external components
+2. **Create internal wrapper** component following design system patterns
+3. **Update all import statements** to use internal components
+4. **Test visual consistency** and functionality
+5. **Update design system showcase** with new patterns
+6. **Document migration decisions** for team reference
+
+**Migration Checklist:**
+- [ ] External component usage identified
+- [ ] Internal design system component created
+- [ ] All application imports updated
+- [ ] Visual consistency verified
+- [ ] Design system showcase updated
+- [ ] Quality gates passing
+
 ## External Library Integration
 
-### 7.1 Library Integration Standards
+### 8.1 Library Integration Standards
 
 When integrating external libraries, components MUST:
 
@@ -284,7 +478,7 @@ When integrating external libraries, components MUST:
 3. **Implement proper error handling** for library failures
 4. **Provide fallback behavior** when libraries fail to load
 
-### 7.2 XTerm.js Integration Pattern
+### 8.2 XTerm.js Integration Pattern
 
 For xterm.js integration (reference pattern):
 
@@ -324,7 +518,7 @@ async function initializeTerminal() {
 }
 ```
 
-### 7.3 XTerm.js Styling Standards
+### 8.3 XTerm.js Styling Standards
 
 When integrating xterm.js, components MUST:
 
@@ -367,7 +561,7 @@ When integrating xterm.js, components MUST:
 
 ## Performance Standards
 
-### 8.1 Lazy Loading
+### 9.1 Lazy Loading
 
 Components SHOULD implement lazy loading for:
 - External libraries
@@ -375,7 +569,7 @@ Components SHOULD implement lazy loading for:
 - Large datasets
 - Non-critical features
 
-### 8.2 Reactive Performance
+### 9.2 Reactive Performance
 
 Components MUST:
 - Use `readonly()` for exposed reactive values that shouldn't be modified
@@ -396,7 +590,7 @@ await nextTick();
 fitAddon.value?.fit();
 ```
 
-### 8.3 Memory Management
+### 9.3 Memory Management
 
 Components MUST:
 - Clean up all event listeners in `onUnmounted`
@@ -405,21 +599,21 @@ Components MUST:
 
 ## Testing Requirements
 
-### 9.1 Test Coverage
+### 10.1 Test Coverage
 
 Components MUST achieve:
 - **Minimum 80% code coverage** (statements, branches, functions, lines)
 - **100% test success rate**
 - **Integration test coverage** for user interactions
 
-### 9.2 Testing Strategy
+### 10.2 Testing Strategy
 
 Components SHOULD be tested with:
 - **User journey testing** over unit testing
 - **Minimal mocking** - only external dependencies
 - **Real component behavior** verification
 
-### 9.3 Test Structure
+### 10.3 Test Structure
 
 ```typescript
 // ✅ Good - Integration test pattern
@@ -448,7 +642,7 @@ describe("Terminal Component", () => {
 
 ## File Organization
 
-### 10.1 Component Location
+### 11.1 Component Location
 
 Components MUST be organized as:
 
@@ -464,7 +658,7 @@ components/
     └── Modal.vue
 ```
 
-### 10.2 Naming Conventions
+### 11.2 Naming Conventions
 
 Components MUST follow these naming rules:
 
@@ -474,7 +668,7 @@ Components MUST follow these naming rules:
 - **Events**: kebab-case (e.g., `terminal-connected`, `user-action`)
 - **CSS classes**: kebab-case (e.g., `terminal-container`, `connect-button`)
 
-### 10.3 Component Size
+### 11.3 Component Size
 
 Components SHOULD:
 - Stay under 500 lines when possible
@@ -484,7 +678,7 @@ Components SHOULD:
 
 ## Styling Standards
 
-### 11.1 Scoped Styles
+### 12.1 Scoped Styles
 
 Components MUST:
 - Use `<style scoped>` for component-specific styles
@@ -507,7 +701,7 @@ Components MUST:
 }
 ```
 
-### 11.2 Deep Selectors
+### 12.2 Deep Selectors
 
 When styling child components, use `:deep()` selector:
 
@@ -520,7 +714,7 @@ When styling child components, use `:deep()` selector:
 }
 ```
 
-### 11.3 Responsive Design
+### 12.3 Responsive Design
 
 Components SHOULD:
 - Use responsive units (rem, em, %)
@@ -529,7 +723,7 @@ Components SHOULD:
 
 ## Accessibility Requirements
 
-### 12.1 ARIA Standards
+### 13.1 ARIA Standards
 
 Components MUST:
 - Include appropriate ARIA labels
@@ -550,7 +744,7 @@ Components MUST:
 </template>
 ```
 
-### 12.2 Keyboard Navigation
+### 13.2 Keyboard Navigation
 
 Components MUST:
 - Support standard keyboard shortcuts
@@ -558,7 +752,7 @@ Components MUST:
 - Provide visible focus indicators
 - Handle Tab navigation properly
 
-### 12.3 Color and Contrast
+### 13.3 Color and Contrast
 
 Components MUST:
 - Meet WCAG color contrast requirements
