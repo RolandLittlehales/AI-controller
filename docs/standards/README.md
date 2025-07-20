@@ -315,10 +315,23 @@ cd node_modules/.pnpm/node-pty@1.0.0/node_modules/node-pty && npm rebuild
 
 ## Related Documentation
 
+### 🔗 Navigation Hub
+- **Getting Started** → [Project CLAUDE.md](../../CLAUDE.md) - Activity-based development guidance
+- **Workflow Guides** → [docs/workflows/](../workflows/) - Step-by-step development processes
+- **Implementation Guides** → [docs/implementation/](../implementation/) - Technical reference documentation
+- **Troubleshooting** → [docs/troubleshooting/](../troubleshooting/) - Problem resolution guides
+- **Quick Reference** → [docs/reference/](../reference/) - Fast lookup guides and patterns
+
+### Technical Documentation Cross-References
+- **TypeScript Patterns** → [Code Patterns Reference](../reference/code-patterns.md#vue-3-component-patterns)
+- **Testing Implementation** → [Testing Guide](../implementation/testing.md#core-testing-philosophy)
+- **CSS/Styling Patterns** → [Styling Guide](../implementation/styling.md#vanilla-extract-as-primary-css-system)
+- **API Development** → [Backend Guide](../implementation/backend.md#api-development-patterns)
+
 ### Project Documentation
-- [Project CLAUDE.md](../../CLAUDE.md) - Development workflow and guidelines
 - [Package.json Scripts](../../package.json) - Available npm scripts
 - [TypeScript Configuration](../../tsconfig.json) - TypeScript settings
+- [Vitest Configuration](../../vitest.config.ts) - Test setup and coverage
 
 ### External References
 - [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119.html) - Key words for use in RFCs
