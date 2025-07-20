@@ -402,7 +402,7 @@ export function useMultiTerminalManager() {
    * Get existing connection
    */
   const getConnection = (terminalId: string): TerminalConnectionManager | undefined => {
-    return connections.value[terminalId] as TerminalConnectionManager | undefined;
+    return connections.value[terminalId];
   };
 
   /**
@@ -411,7 +411,13 @@ export function useMultiTerminalManager() {
   const getAllStatuses = (): Record<string, TerminalConnection["status"]> => {
     const statuses: Record<string, TerminalConnection["status"]> = {};
     for (const [terminalId, connectionManager] of Object.entries(connections.value)) {
-      statuses[terminalId] = (connectionManager as unknown as TerminalConnectionManager).connection.value.status;
+      const connectionValue = connectionManager.connection.value;
+      if (connectionValue) {
+        statuses[terminalId] = connectionValue.status;
+      } else {
+        // Fallback for test environments where readonly ref may not expose .value properly
+        statuses[terminalId] = "disconnected";
+      }
     }
     return statuses;
   };

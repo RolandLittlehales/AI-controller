@@ -2,6 +2,7 @@
 import type { WebSocketMessage, TerminalMessage, ResizeMessage, WebSocketPeer } from "~/types";
 import { terminalService } from "~/server/services/terminal";
 import { logger } from "~/utils/logger";
+import { randomUUID } from "crypto";
 
 // Store WebSocket peers for each terminal with metadata
 interface PeerInfo {
@@ -15,8 +16,8 @@ const terminalPeers = new Map<string, PeerInfo>();
 
 export default defineWebSocketHandler({
   async open(peer: WebSocketPeer) {
-    // For now, we'll store the peer temporarily and get the terminal ID from the first message
-    const tempId = "temp-" + Date.now();
+    // Generate secure temporary ID for peer until terminal ID is established
+    const tempId = randomUUID();
 
     // Store temporary peer info
     terminalPeers.set(tempId, {
@@ -85,17 +86,30 @@ export default defineWebSocketHandler({
   },
 
   async close(peer: WebSocketPeer) {
-    // Cleanup terminals when connection closes
-    for (const [clientTerminalId, peerInfo] of terminalPeers.entries()) {
+    // Find and cleanup terminals for this peer with proper error handling
+    const peerEntries = Array.from(terminalPeers.entries());
+
+    for (const [clientTerminalId, peerInfo] of peerEntries) {
       if (peerInfo.peer === peer) {
-        if (peerInfo.serverTerminalId) {
-          await terminalService.destroyTerminal(peerInfo.serverTerminalId);
-        }
+        // Remove from map first to prevent concurrent access
         terminalPeers.delete(clientTerminalId);
-        logger.info("Terminal WebSocket connection closed", {
-          clientTerminalId,
-          totalConnections: terminalPeers.size,
-        });
+
+        try {
+          if (peerInfo.serverTerminalId) {
+            await terminalService.destroyTerminal(peerInfo.serverTerminalId);
+          }
+
+          logger.info("Terminal WebSocket connection closed successfully", {
+            clientTerminalId,
+            serverTerminalId: peerInfo.serverTerminalId,
+            totalConnections: terminalPeers.size,
+          });
+        } catch (error) {
+          logger.error("Error during terminal cleanup", error, {
+            clientTerminalId,
+            serverTerminalId: peerInfo.serverTerminalId,
+          });
+        }
         break;
       }
     }

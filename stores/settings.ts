@@ -18,6 +18,7 @@ export const useSettingsStore = defineStore("settings", {
       fontSize: 14,
       fontFamily: "Monaco, Consolas, 'Liberation Mono', monospace",
       scrollback: 1000,
+      historyLimit: 3000,
       cursorBlink: true,
       cursorStyle: "block",
       version: "1.0.0",

@@ -3,6 +3,7 @@ import { ref, readonly, computed } from "vue";
 import { useSystemResources } from "~/composables/useSystemResources";
 import { useGitRepository } from "~/composables/useGitRepository";
 import { useMultiTerminalManager } from "~/composables/useMultiTerminalWebSocket";
+import { useTerminalSettings } from "~/composables/useSettings";
 import { logger } from "~/utils/logger";
 // import type { MultiTerminalManager } from "~/composables/useMultiTerminalWebSocket";
 
@@ -48,6 +49,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
   const systemResources = useSystemResources();
   const gitRepository = useGitRepository();
   const webSocketManager = useMultiTerminalManager();
+  const terminalSettings = useTerminalSettings();
 
   // Initialize system resources on store creation
   systemResources.detectSystemCapability();
@@ -235,13 +237,32 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
   };
 
   /**
-   * Handle terminal output from WebSocket
+   * Handle terminal output from WebSocket with history limit management
    */
   const handleTerminalOutput = (terminalId: string, output: string): void => {
     if (!terminalOutputs.value[terminalId]) {
       terminalOutputs.value[terminalId] = [];
     }
+
+    // Add new output
     terminalOutputs.value[terminalId].push(output);
+
+    // Apply history limit from terminal config (default 3000 lines)
+    const historyLimit = terminalSettings.getTerminalConfig().historyLimit || 3000;
+    const outputHistory = terminalOutputs.value[terminalId];
+
+    if (outputHistory.length > historyLimit) {
+      // Remove excess lines from the beginning to maintain limit
+      const excessLines = outputHistory.length - historyLimit;
+      terminalOutputs.value[terminalId] = outputHistory.slice(excessLines);
+
+      logger.debug("Terminal output history trimmed", {
+        terminalId,
+        removedLines: excessLines,
+        currentLines: terminalOutputs.value[terminalId].length,
+        limit: historyLimit,
+      });
+    }
   };
 
   /**

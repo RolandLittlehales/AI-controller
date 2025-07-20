@@ -4,41 +4,42 @@ import { join } from "path";
 import { SettingsFileService } from "./settingsFiles";
 import type { UISettings, TerminalConfig, SessionData } from "~/types";
 
+// Shared mock data for all tests
+const mockUISettings: UISettings = {
+  theme: "dark",
+  showWelcomeMessage: true,
+  sidebarCollapsed: false,
+  notifications: true,
+  fontSize: "medium",
+  version: "1.0.0",
+  lastUpdated: "2024-01-01T00:00:00.000Z",
+};
+
+const mockTerminalConfig: TerminalConfig = {
+  defaultDirectory: "/home/user",
+  defaultShell: "/bin/bash",
+  fontSize: 14,
+  fontFamily: "monospace",
+  scrollback: 1000,
+  historyLimit: 3000,
+  cursorBlink: true,
+  cursorStyle: "block",
+  version: "1.0.0",
+  lastUpdated: "2024-01-01T00:00:00.000Z",
+};
+
+const mockSessionData: SessionData = {
+  activeTerminals: ["terminal1", "terminal2"],
+  activeAgents: ["agent1"],
+  lastUsedAgent: "agent1",
+  workingDirectories: { "agent1": "/home/user/project" },
+  recentDirectories: ["/home/user/project", "/home/user/docs"],
+  version: "1.0.0",
+  lastUpdated: "2024-01-01T00:00:00.000Z",
+};
+
 describe("SettingsFileService", () => {
   let service: SettingsFileService;
-
-  // Mock data for testing
-  const mockUISettings: UISettings = {
-    theme: "dark",
-    showWelcomeMessage: true,
-    sidebarCollapsed: false,
-    notifications: true,
-    fontSize: "medium",
-    version: "1.0.0",
-    lastUpdated: "2024-01-01T00:00:00.000Z",
-  };
-
-  const mockTerminalConfig: TerminalConfig = {
-    defaultDirectory: "/home/user",
-    defaultShell: "/bin/bash",
-    fontSize: 14,
-    fontFamily: "monospace",
-    scrollback: 1000,
-    cursorBlink: true,
-    cursorStyle: "block",
-    version: "1.0.0",
-    lastUpdated: "2024-01-01T00:00:00.000Z",
-  };
-
-  const mockSessionData: SessionData = {
-    activeTerminals: ["terminal1", "terminal2"],
-    activeAgents: ["agent1"],
-    lastUsedAgent: "agent1",
-    workingDirectories: { "agent1": "/home/user/project" },
-    recentDirectories: ["/home/user/project", "/home/user/docs"],
-    version: "1.0.0",
-    lastUpdated: "2024-01-01T00:00:00.000Z",
-  };
 
   beforeEach(() => {
     // Reset the in-memory file system
@@ -452,27 +453,8 @@ describe("SettingsFileService Integration", () => {
     });
 
     it("should handle multi-category settings operations", async () => {
-      const mockUI: UISettings = {
-        theme: "dark",
-        showWelcomeMessage: true,
-        sidebarCollapsed: false,
-        notifications: true,
-        fontSize: "medium",
-        version: "1.0.0",
-        lastUpdated: "2024-01-01T00:00:00.000Z",
-      };
-
-      const mockTerminal: TerminalConfig = {
-        defaultDirectory: "/home/user",
-        defaultShell: "/bin/bash",
-        fontSize: 14,
-        fontFamily: "monospace",
-        scrollback: 1000,
-        cursorBlink: true,
-        cursorStyle: "block",
-        version: "1.0.0",
-        lastUpdated: "2024-01-01T00:00:00.000Z",
-      };
+      const mockUI: UISettings = { ...mockUISettings };
+      const mockTerminal: TerminalConfig = { ...mockTerminalConfig };
 
       // Setup: create both settings files
       vol.fromJSON({
@@ -503,15 +485,7 @@ describe("SettingsFileService Integration", () => {
     });
 
     it("should handle error recovery scenarios", async () => {
-      const mockSettings: UISettings = {
-        theme: "dark",
-        showWelcomeMessage: true,
-        sidebarCollapsed: false,
-        notifications: true,
-        fontSize: "medium",
-        version: "1.0.0",
-        lastUpdated: "2024-01-01T00:00:00.000Z",
-      };
+      const mockSettings: UISettings = { ...mockUISettings };
 
       // Setup: create default settings file
       vol.fromJSON({
@@ -530,15 +504,7 @@ describe("SettingsFileService Integration", () => {
 
   describe("Atomic file operations", () => {
     it("should use atomic write operations with temp files", async () => {
-      const mockSettings: UISettings = {
-        theme: "dark",
-        showWelcomeMessage: true,
-        sidebarCollapsed: false,
-        notifications: true,
-        fontSize: "medium",
-        version: "1.0.0",
-        lastUpdated: "2024-01-01T00:00:00.000Z",
-      };
+      const mockSettings: UISettings = { ...mockUISettings };
 
       // Setup: create settings directory
       vol.fromJSON({
@@ -556,15 +522,7 @@ describe("SettingsFileService Integration", () => {
     });
 
     it("should fail concurrent write operations (not yet implemented)", async () => {
-      const mockSettings: UISettings = {
-        theme: "dark",
-        showWelcomeMessage: true,
-        sidebarCollapsed: false,
-        notifications: true,
-        fontSize: "medium",
-        version: "1.0.0",
-        lastUpdated: "2024-01-01T00:00:00.000Z",
-      };
+      const mockSettings: UISettings = { ...mockUISettings };
 
       // Setup: create settings directory
       vol.fromJSON({

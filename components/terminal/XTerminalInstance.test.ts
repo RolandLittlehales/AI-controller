@@ -56,12 +56,12 @@ vi.mock("~/components/ui/AppButton.vue", () => ({
 }));
 
 describe("XTerminalInstance", () => {
-  let mockTerminal_: BasicTerminal;
+  let mockTerminal: BasicTerminal;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockTerminal_ = {
+    mockTerminal = {
       id: "term_123456_abcdef",
       name: "Test Terminal",
       status: "connected",
@@ -79,7 +79,7 @@ describe("XTerminalInstance", () => {
 
   it("should render terminal header with correct information", () => {
     const wrapper = mount(XTerminalInstance, {
-      props: { terminal: mockTerminal_ },
+      props: { terminal: mockTerminal },
     });
 
     expect(wrapper.find(".terminal-title").text()).toBe("Test Terminal");
@@ -90,7 +90,7 @@ describe("XTerminalInstance", () => {
 
   it("should format connection status correctly", () => {
     const wrapper = mount(XTerminalInstance, {
-      props: { terminal: mockTerminal_ },
+      props: { terminal: mockTerminal },
     });
 
     // Should show connected status
@@ -100,7 +100,7 @@ describe("XTerminalInstance", () => {
 
   it("should truncate long working directory paths", () => {
     const longPathTerminal = {
-      ...mockTerminal_,
+      ...mockTerminal,
       workingDirectory: "/very/long/path/to/some/deeply/nested/project/directory/that/should/be/truncated",
     };
 
@@ -115,7 +115,7 @@ describe("XTerminalInstance", () => {
 
   it("should show reconnect and close buttons", () => {
     const wrapper = mount(XTerminalInstance, {
-      props: { terminal: mockTerminal_ },
+      props: { terminal: mockTerminal },
     });
 
     const buttons = wrapper.findAllComponents({ name: "AppButton" });
@@ -128,7 +128,7 @@ describe("XTerminalInstance", () => {
 
   it("should emit remove event when close button clicked", async () => {
     const wrapper = mount(XTerminalInstance, {
-      props: { terminal: mockTerminal_ },
+      props: { terminal: mockTerminal },
     });
 
     const closeButton = wrapper.findAllComponents({ name: "AppButton" })[1];
@@ -139,7 +139,7 @@ describe("XTerminalInstance", () => {
 
   it("should call reconnect when reconnect button clicked", async () => {
     const wrapper = mount(XTerminalInstance, {
-      props: { terminal: mockTerminal_ },
+      props: { terminal: mockTerminal },
     });
 
     const reconnectButton = wrapper.findAllComponents({ name: "AppButton" })[0];
@@ -157,7 +157,7 @@ describe("XTerminalInstance", () => {
     });
 
     const wrapper = mount(XTerminalInstance, {
-      props: { terminal: mockTerminal_ },
+      props: { terminal: mockTerminal },
     });
 
     expect(wrapper.find(".connection-overlay").exists()).toBe(true);
@@ -173,7 +173,7 @@ describe("XTerminalInstance", () => {
     });
 
     const wrapper = mount(XTerminalInstance, {
-      props: { terminal: mockTerminal_ },
+      props: { terminal: mockTerminal },
     });
 
     expect(wrapper.find(".connection-overlay.error").exists()).toBe(true);
@@ -181,7 +181,7 @@ describe("XTerminalInstance", () => {
   });
 
   it("should handle terminal without git information", () => {
-    const { git: _git, ...terminalWithoutGit } = mockTerminal_;
+    const { git: _git, ...terminalWithoutGit } = mockTerminal;
     const terminal: BasicTerminal = terminalWithoutGit;
 
     const wrapper = mount(XTerminalInstance, {
@@ -192,7 +192,7 @@ describe("XTerminalInstance", () => {
   });
 
   it("should handle terminal without working directory", () => {
-    const { workingDirectory: _workingDirectory, ...terminalWithoutWorkingDir } = mockTerminal_;
+    const { workingDirectory: _workingDirectory, ...terminalWithoutWorkingDir } = mockTerminal;
     const terminal: BasicTerminal = terminalWithoutWorkingDir;
 
     const wrapper = mount(XTerminalInstance, {
@@ -211,7 +211,7 @@ describe("XTerminalInstance", () => {
     });
 
     const wrapper = mount(XTerminalInstance, {
-      props: { terminal: mockTerminal_ },
+      props: { terminal: mockTerminal },
     });
 
     const reconnectButton = wrapper.findAllComponents({ name: "AppButton" })[0];
@@ -228,7 +228,7 @@ describe("XTerminalInstance", () => {
     });
 
     const wrapper = mount(XTerminalInstance, {
-      props: { terminal: mockTerminal_ },
+      props: { terminal: mockTerminal },
     });
 
     expect(wrapper.find(".terminal-container").classes()).toContain("terminal-loading");

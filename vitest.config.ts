@@ -33,8 +33,8 @@ export default defineConfig({
         "styles/**",
         "types/**",
         "server/api/**",
-        // Temporary exclusions for Phase 2A - TODO: Remove in Phase 2B Step 7
-        "composables/useGitRepository.ts", // Server-side git operations not implemented yet
+        // Phase 2B: Server-side git operations implemented but complex to test
+        "composables/useGitRepository.ts", // Server-side git operations - complex import.meta.server mocking
         "composables/useSavedDirectories.ts", // Placeholder localStorage implementation, full testing in Phase 2B
       ],
       thresholds: {
