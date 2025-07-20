@@ -13,6 +13,13 @@ import { logger } from "~/utils/logger";
  * - Isolated terminal input/output streams
  */
 
+// WebSocket connection configuration constants
+const WEBSOCKET_CONFIG = {
+  INITIAL_RETRY_DELAY_MS: 1000,
+  MAX_RETRY_DELAY_MS: 10000,
+  MAX_RETRY_ATTEMPTS: 5,
+} as const;
+
 export interface TerminalConnection {
   terminalId: string;
   websocket: WebSocket | null;
@@ -330,12 +337,10 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
    * Reconnect with exponential backoff
    */
   const reconnect = async (): Promise<void> => {
-    const MAX_RETRIES = 5;
-
-    if (connection.value.retryCount >= MAX_RETRIES) {
+    if (connection.value.retryCount >= WEBSOCKET_CONFIG.MAX_RETRY_ATTEMPTS) {
       logger.error("Max reconnection attempts reached", {
         terminalId: options.terminalId,
-        maxRetries: MAX_RETRIES,
+        maxRetries: WEBSOCKET_CONFIG.MAX_RETRY_ATTEMPTS,
       });
       connection.value.status = "error";
       options.onStatusChange?.(connection.value.status);
@@ -346,7 +351,10 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
     disconnect();
 
     connection.value.retryCount++;
-    const delay = Math.min(1000 * Math.pow(2, connection.value.retryCount - 1), 10000);
+    const delay = Math.min(
+      WEBSOCKET_CONFIG.INITIAL_RETRY_DELAY_MS * Math.pow(2, connection.value.retryCount - 1),
+      WEBSOCKET_CONFIG.MAX_RETRY_DELAY_MS,
+    );
 
     logger.info("Reconnecting terminal WebSocket", {
       terminalId: options.terminalId,

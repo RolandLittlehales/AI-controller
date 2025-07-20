@@ -76,11 +76,17 @@
 import { ref, onMounted, onUnmounted, watch, nextTick } from "vue";
 import type { BasicTerminal } from "~/stores/terminalManager";
 import { useTerminalManagerStore } from "~/stores/terminalManager";
+import { logger } from "~/utils/logger";
 import AppButton from "~/components/ui/AppButton.vue";
 
 // Dynamic imports for xterm.js to avoid SSR issues
 let Terminal: typeof import("@xterm/xterm").Terminal | null = null;
 let FitAddon: typeof import("@xterm/addon-fit").FitAddon | null = null;
+
+// Terminal configuration constants
+const TERMINAL_CONFIG = {
+  FOCUS_DELAY_MS: 100,
+} as const;
 
 interface Props {
   terminal: BasicTerminal;
@@ -122,8 +128,7 @@ const initializeXTermLibraries = async () => {
     // Import CSS dynamically
     await import("@xterm/xterm/css/xterm.css");
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("Failed to load xterm.js libraries:", error);
+    logger.error("Failed to load xterm.js libraries", { error });
     throw error;
   }
 };
@@ -204,11 +209,9 @@ const initializeTerminal = async (): Promise<void> => {
       }
     });
 
-    // eslint-disable-next-line no-console
-    console.log("XTerm terminal initialized successfully");
+    logger.info("XTerm terminal initialized successfully", { terminalId: props.terminal.id });
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("Failed to initialize terminal:", error);
+    logger.error("Failed to initialize terminal", { error, terminalId: props.terminal.id });
     connectionStatus.value = "error";
   }
 };
@@ -311,8 +314,7 @@ const handleResize = (): void => {
     try {
       fitAddon.fit();
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.warn("Failed to fit terminal:", error);
+      logger.warn("Failed to fit terminal", { error });
     }
   }
 };
@@ -329,7 +331,7 @@ onMounted(async () => {
     if (xterm) {
       xterm.focus();
     }
-  }, 100);
+  }, TERMINAL_CONFIG.FOCUS_DELAY_MS);
 });
 
 onUnmounted(() => {
