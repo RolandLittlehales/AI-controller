@@ -100,8 +100,8 @@ const terminalContainer = ref<HTMLElement>();
 let xterm: import("@xterm/xterm").Terminal | null = null;
 let fitAddon: import("@xterm/addon-fit").FitAddon | null = null;
 
-// Connection status from WebSocket manager
-const connectionStatus = ref<"connecting" | "connected" | "disconnected" | "error">("disconnected");
+// Connection status from WebSocket manager - start with connecting since terminal is being created
+const connectionStatus = ref<"connecting" | "connected" | "disconnected" | "error">("connecting");
 
 /**
  * Initialize xterm.js libraries dynamically
@@ -287,7 +287,7 @@ watch(
 watch(
   () => {
     const connection = terminalStore.webSocketManager.getConnection(props.terminal.id);
-    return connection?.connection.value.status || "disconnected";
+    return connection?.connection?.value?.status || props.terminal.status;
   },
   (newStatus) => {
     connectionStatus.value = newStatus;

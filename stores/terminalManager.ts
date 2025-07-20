@@ -42,9 +42,9 @@ export interface CreateTerminalOptions {
  * - CRUD operations for terminals
  */
 export const useTerminalManagerStore = defineStore("terminalManager", () => {
-  const terminals = ref(new Map<string, BasicTerminal>());
+  const terminals = ref<Record<string, BasicTerminal>>({});
   const activeTerminalId = ref<string | null>(null);
-  const terminalOutputs = ref(new Map<string, string[]>());
+  const terminalOutputs = ref<Record<string, string[]>>({});
   const systemResources = useSystemResources();
   const gitRepository = useGitRepository();
   const webSocketManager = useMultiTerminalManager();
@@ -56,7 +56,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * Check if we can create another terminal based on system limits
    */
   const canCreateTerminal = computed(() =>
-    terminals.value.size < systemResources.systemInfo.value.maxTerminals,
+    Object.keys(terminals.value).length < systemResources.systemInfo.value.maxTerminals,
   );
 
   /**
@@ -65,7 +65,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * @returns True if name is already in use
    */
   const isTerminalNameTaken = (name: string): boolean => {
-    return Array.from(terminals.value.values()).some(terminal =>
+    return Object.values(terminals.value).some(terminal =>
       terminal.name.toLowerCase().trim() === name.toLowerCase().trim(),
     );
   };
@@ -121,7 +121,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
       terminal.workingDirectory = terminalOptions.workingDirectory;
     }
 
-    terminals.value.set(terminalId, terminal);
+    terminals.value[terminalId] = terminal;
 
     return terminalId;
   };
@@ -132,20 +132,22 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    */
   const setActiveTerminal = (terminalId: string | null): void => {
     // Deactivate previous active terminal
-    if (activeTerminalId.value) {
-      const prev = terminals.value.get(activeTerminalId.value);
-      if (prev) {
-        prev.isActive = false;
-      }
+    if (activeTerminalId.value && terminals.value[activeTerminalId.value]) {
+      const prevTerminal = terminals.value[activeTerminalId.value];
+      terminals.value[activeTerminalId.value] = {
+        ...prevTerminal,
+        isActive: false,
+      };
     }
 
     // Activate new terminal
     activeTerminalId.value = terminalId;
-    if (terminalId) {
-      const terminal = terminals.value.get(terminalId);
-      if (terminal) {
-        terminal.isActive = true;
-      }
+    if (terminalId && terminals.value[terminalId]) {
+      const terminal = terminals.value[terminalId];
+      terminals.value[terminalId] = {
+        ...terminal,
+        isActive: true,
+      };
     }
   };
 
@@ -154,14 +156,14 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * @param terminalId - ID of terminal to remove
    */
   const removeTerminal = (terminalId: string): void => {
-    const terminal = terminals.value.get(terminalId);
+    const terminal = terminals.value[terminalId];
     if (!terminal) return;
 
-    terminals.value.delete(terminalId);
+    delete terminals.value[terminalId];
 
     // If removing active terminal, switch to next available
     if (activeTerminalId.value === terminalId) {
-      const remaining = Array.from(terminals.value.keys());
+      const remaining = Object.keys(terminals.value);
       setActiveTerminal(remaining[0] || null);
     }
   };
@@ -172,9 +174,12 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * @param status - New status
    */
   const updateTerminalStatus = (terminalId: string, status: BasicTerminal["status"]): void => {
-    const terminal = terminals.value.get(terminalId);
-    if (terminal) {
-      terminal.status = status;
+    if (terminals.value[terminalId]) {
+      const terminal = terminals.value[terminalId];
+      terminals.value[terminalId] = {
+        ...terminal,
+        status,
+      };
     }
   };
 
@@ -184,28 +189,28 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * @returns Terminal or undefined
    */
   const getTerminal = (terminalId: string): BasicTerminal | undefined => {
-    return terminals.value.get(terminalId);
+    return terminals.value[terminalId];
   };
 
   /**
    * Get all terminals as array
    * @returns Array of all terminals
    */
-  const getAllTerminals = computed(() => Array.from(terminals.value.values()));
+  const getAllTerminals = computed(() => Object.values(terminals.value));
 
   /**
    * Get currently active terminal
    * @returns Active terminal or undefined
    */
   const getActiveTerminal = computed(() => {
-    return activeTerminalId.value ? terminals.value.get(activeTerminalId.value) : undefined;
+    return activeTerminalId.value ? terminals.value[activeTerminalId.value] : undefined;
   });
 
   /**
    * Get terminal count
    * @returns Number of terminals
    */
-  const terminalCount = computed(() => terminals.value.size);
+  const terminalCount = computed(() => Object.keys(terminals.value).length);
 
   /**
    * Refresh git repository information via API call
@@ -227,9 +232,10 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * Handle terminal output from WebSocket
    */
   const handleTerminalOutput = (terminalId: string, output: string): void => {
-    const outputs = terminalOutputs.value.get(terminalId) || [];
-    outputs.push(output);
-    terminalOutputs.value.set(terminalId, outputs);
+    if (!terminalOutputs.value[terminalId]) {
+      terminalOutputs.value[terminalId] = [];
+    }
+    terminalOutputs.value[terminalId].push(output);
   };
 
   /**
@@ -262,7 +268,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    */
   const createTerminalWithWebSocket = async (options: CreateTerminalOptions): Promise<string> => {
     const terminalId = createTerminal(options);
-    const terminal = terminals.value.get(terminalId);
+    const terminal = terminals.value[terminalId];
 
     if (!terminal) {
       throw new Error("Failed to create terminal");
@@ -302,7 +308,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * @returns Array of output strings
    */
   const getTerminalOutput = (terminalId: string): string[] => {
-    return terminalOutputs.value.get(terminalId) || [];
+    return terminalOutputs.value[terminalId] || [];
   };
 
   /**
@@ -317,7 +323,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
     }
 
     // Clean up outputs
-    terminalOutputs.value.delete(terminalId);
+    delete terminalOutputs.value[terminalId];
 
     // Remove from terminals map
     removeTerminal(terminalId);

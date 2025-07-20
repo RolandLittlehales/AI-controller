@@ -71,10 +71,15 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
       data: {
         cols: 100,
         rows: 30,
-        cwd: options.workingDirectory || process.cwd?.() || "/",
+        cwd: options.workingDirectory || "/",
       },
       timestamp: new Date(),
     };
+
+    logger.info("Sending terminal-create message", { 
+      terminalId: options.terminalId, 
+      message: createMessage 
+    });
 
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     sendMessage(createMessage);
@@ -153,6 +158,7 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
     logger.error("Terminal WebSocket error", {
       terminalId: options.terminalId,
       event,
+      readyState: connection.value.websocket?.readyState,
     });
     connection.value.status = "error";
     options.onStatusChange?.(connection.value.status);
@@ -350,15 +356,14 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
  * Multi-terminal WebSocket coordination manager
  */
 export function useMultiTerminalManager() {
-  const connections = ref<Map<string, TerminalConnectionManager>>(new Map());
+  const connections = ref<Record<string, TerminalConnectionManager>>({});
 
   /**
    * Create a new terminal connection
    */
   const createConnection = (options: MultiTerminalWebSocketOptions): TerminalConnectionManager => {
     const connectionManager = useMultiTerminalWebSocket(options);
-    // @ts-expect-error - TypeScript strict mode issue with Map type inference
-    connections.value.set(options.terminalId, connectionManager);
+    connections.value[options.terminalId] = connectionManager;
 
     logger.info("Created terminal connection", { terminalId: options.terminalId });
     return connectionManager;
@@ -368,10 +373,10 @@ export function useMultiTerminalManager() {
    * Remove and disconnect a terminal connection
    */
   const removeConnection = (terminalId: string): void => {
-    const connection = connections.value.get(terminalId);
+    const connection = connections.value[terminalId];
     if (connection) {
       connection.disconnect();
-      connections.value.delete(terminalId);
+      delete connections.value[terminalId];
       logger.info("Removed terminal connection", { terminalId });
     }
   };
@@ -380,7 +385,7 @@ export function useMultiTerminalManager() {
    * Get existing connection
    */
   const getConnection = (terminalId: string): TerminalConnectionManager | undefined => {
-    return connections.value.get(terminalId) as TerminalConnectionManager | undefined;
+    return connections.value[terminalId] as TerminalConnectionManager | undefined;
   };
 
   /**
@@ -388,7 +393,7 @@ export function useMultiTerminalManager() {
    */
   const getAllStatuses = (): Record<string, TerminalConnection["status"]> => {
     const statuses: Record<string, TerminalConnection["status"]> = {};
-    for (const [terminalId, connectionManager] of connections.value.entries()) {
+    for (const [terminalId, connectionManager] of Object.entries(connections.value)) {
       statuses[terminalId] = (connectionManager as unknown as TerminalConnectionManager).connection.value.status;
     }
     return statuses;
@@ -398,10 +403,10 @@ export function useMultiTerminalManager() {
    * Disconnect all terminals
    */
   const disconnectAll = (): void => {
-    for (const [, connection] of connections.value.entries()) {
+    for (const connection of Object.values(connections.value)) {
       connection.disconnect();
     }
-    connections.value.clear();
+    connections.value = {};
     logger.info("Disconnected all terminal connections");
   };
 
