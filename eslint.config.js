@@ -3,7 +3,12 @@ import withNuxt from "./.nuxt/eslint.config.mjs";
 export default withNuxt({
   rules: {
     // TypeScript recommended rules
-    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+    "@typescript-eslint/no-unused-vars": ["error", {
+      argsIgnorePattern: "^_",
+      varsIgnorePattern: "^_",
+      caughtErrorsIgnorePattern: "^_",
+      destructuredArrayIgnorePattern: "^_",
+    }],
     "@typescript-eslint/no-explicit-any": "error",
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
@@ -39,6 +44,13 @@ export default withNuxt({
     "no-use-before-define": "off",
     "@typescript-eslint/no-use-before-define": ["error", { functions: false }],
 
+    // Array destructuring pattern enforcement
+    "prefer-destructuring": ["warn", {
+      array: false,
+      object: true,
+    }, {
+      enforceForRenamedProperties: false,
+    }],
     // Prettier will handle these, but we'll enforce them via ESLint too
     "quotes": ["error", "double", { avoidEscape: true }],
     "semi": ["error", "always"],

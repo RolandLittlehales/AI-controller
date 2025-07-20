@@ -73,10 +73,9 @@ const createFirstTerminal = (): void => {
  * Handle terminal creation from modal
  * @param terminalId - ID of the created terminal
  */
-const handleTerminalCreated = async (terminalId: string): Promise<void> => {
+const handleTerminalCreated = async (_terminalId: string): Promise<void> => {
   // Terminal creation now includes WebSocket connection setup
   // No additional steps needed as the XTerminalInstance will handle connection
-  console.log('Terminal created:', terminalId);
 };
 
 /**
@@ -84,7 +83,7 @@ const handleTerminalCreated = async (terminalId: string): Promise<void> => {
  */
 const handleRemoveTerminal = async (): Promise<void> => {
   if (!activeTerminal.value) return;
-  
+
   // Use the enhanced cleanup method that handles WebSocket disconnection
   await terminalStore.removeTerminalWithCleanup(activeTerminal.value.id);
 };

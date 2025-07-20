@@ -8,48 +8,25 @@ interface PeerInfo {
   peer: WebSocketPeer;
   clientTerminalId: string;
   serverTerminalId?: string;
-  workingDirectory?: string;
+  workingDirectory?: string | undefined;
 }
 
 const terminalPeers = new Map<string, PeerInfo>();
 
 export default defineWebSocketHandler({
   async open(peer: WebSocketPeer) {
-    // Extract terminal parameters from URL query string
-    const url = new URL(peer.url || '', 'http://localhost');
-    const clientTerminalId = url.searchParams.get('terminalId');
-    const workingDirectory = url.searchParams.get('cwd');
+    // For now, we'll store the peer temporarily and get the terminal ID from the first message
+    const tempId = "temp-" + Date.now();
     
-    if (!clientTerminalId) {
-      logger.error('Terminal connection rejected: missing terminalId parameter');
-      peer.send(JSON.stringify({
-        type: "error",
-        data: { message: "Missing terminalId parameter" },
-      }));
-      peer.close(1008, 'Missing terminalId parameter');
-      return;
-    }
-
-    // Check for existing connection with same client terminal ID
-    if (terminalPeers.has(clientTerminalId)) {
-      logger.warn('Replacing existing terminal connection', { clientTerminalId });
-      const existing = terminalPeers.get(clientTerminalId);
-      if (existing?.serverTerminalId) {
-        await terminalService.destroyTerminal(existing.serverTerminalId);
-      }
-    }
-
-    // Store peer info with client terminal ID as key
-    terminalPeers.set(clientTerminalId, {
+    // Store temporary peer info
+    terminalPeers.set(tempId, {
       peer,
-      clientTerminalId,
-      workingDirectory: workingDirectory || undefined
+      clientTerminalId: tempId,
     });
 
-    logger.info('Terminal WebSocket connection opened', { 
-      clientTerminalId, 
-      workingDirectory,
-      totalConnections: terminalPeers.size 
+    logger.info("WebSocket connection opened, awaiting terminal ID", {
+      tempId,
+      totalConnections: terminalPeers.size,
     });
   },
 
@@ -59,7 +36,7 @@ export default defineWebSocketHandler({
 
       // Find peer info for this connection
       let peerInfo: PeerInfo | undefined;
-      for (const [clientTerminalId, info] of terminalPeers.entries()) {
+      for (const [, info] of terminalPeers.entries()) {
         if (info.peer === peer) {
           peerInfo = info;
           break;
@@ -67,7 +44,7 @@ export default defineWebSocketHandler({
       }
 
       if (!peerInfo) {
-        logger.error('Message from unknown peer');
+        logger.error("Message from unknown peer");
         peer.send(JSON.stringify({
           type: "error",
           data: { message: "Unknown connection" },
@@ -115,9 +92,9 @@ export default defineWebSocketHandler({
           await terminalService.destroyTerminal(peerInfo.serverTerminalId);
         }
         terminalPeers.delete(clientTerminalId);
-        logger.info('Terminal WebSocket connection closed', { 
+        logger.info("Terminal WebSocket connection closed", {
           clientTerminalId,
-          totalConnections: terminalPeers.size 
+          totalConnections: terminalPeers.size,
         });
         break;
       }
@@ -129,7 +106,7 @@ async function handleTerminalCreate(peerInfo: PeerInfo, data: WebSocketMessage) 
   const { cols = 80, rows = 24, cwd } = data.data || {};
   const colsNum = Number(cols) || 80;
   const rowsNum = Number(rows) || 24;
-  
+
   // Use working directory from URL parameter or fallback to message data or process.cwd()
   const cwdStr = String(peerInfo.workingDirectory || cwd || process.cwd());
 
@@ -181,16 +158,16 @@ async function handleTerminalCreate(peerInfo: PeerInfo, data: WebSocketMessage) 
       timestamp: new Date(),
     }));
 
-    logger.info("Terminal created successfully", { 
+    logger.info("Terminal created successfully", {
       clientTerminalId: peerInfo.clientTerminalId,
       serverTerminalId: terminalInstance.id,
-      cwd: cwdStr 
+      cwd: cwdStr,
     });
 
   } catch (error) {
-    logger.error("Terminal creation failed", error, { 
+    logger.error("Terminal creation failed", error, {
       handler: "terminal-create",
-      clientTerminalId: peerInfo.clientTerminalId 
+      clientTerminalId: peerInfo.clientTerminalId,
     });
     peerInfo.peer.send(JSON.stringify({
       type: "error",
@@ -255,7 +232,7 @@ async function handleTerminalResize(peerInfo: PeerInfo, data: ResizeMessage) {
   }
 }
 
-async function handleTerminalDestroy(peerInfo: PeerInfo, data: WebSocketMessage) {
+async function handleTerminalDestroy(peerInfo: PeerInfo, _data: WebSocketMessage) {
   if (!peerInfo.serverTerminalId) {
     peerInfo.peer.send(JSON.stringify({
       type: "error",
@@ -265,20 +242,20 @@ async function handleTerminalDestroy(peerInfo: PeerInfo, data: WebSocketMessage)
   }
 
   const success = await terminalService.destroyTerminal(peerInfo.serverTerminalId);
-  
+
   if (success) {
     peerInfo.peer.send(JSON.stringify({
       type: "terminal-destroyed",
       terminalId: peerInfo.serverTerminalId,
       timestamp: new Date(),
     }));
-    
+
     // Remove from peers map
     terminalPeers.delete(peerInfo.clientTerminalId);
-    
-    logger.info("Terminal destroyed successfully", { 
+
+    logger.info("Terminal destroyed successfully", {
       clientTerminalId: peerInfo.clientTerminalId,
-      serverTerminalId: peerInfo.serverTerminalId 
+      serverTerminalId: peerInfo.serverTerminalId,
     });
   } else {
     peerInfo.peer.send(JSON.stringify({

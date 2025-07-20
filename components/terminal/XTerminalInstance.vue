@@ -5,8 +5,8 @@
         <h4 class="terminal-title">{{ terminal.name }}</h4>
         <div class="terminal-meta">
           <span class="terminal-id">{{ terminal.id.slice(0, 8) }}</span>
-          <span 
-            class="connection-status" 
+          <span
+            class="connection-status"
             :class="`status-${connectionStatus}`"
           >
             {{ formatConnectionStatus(connectionStatus) }}
@@ -19,10 +19,10 @@
           </span>
         </div>
       </div>
-      
+
       <div class="terminal-controls">
-        <AppButton 
-          icon="i-heroicons-arrow-path" 
+        <AppButton
+          icon="i-heroicons-arrow-path"
           size="sm"
           variant="secondary"
           :disabled="connectionStatus === 'connecting'"
@@ -32,8 +32,8 @@
         >
           Reconnect
         </AppButton>
-        <AppButton 
-          icon="i-heroicons-x-mark" 
+        <AppButton
+          icon="i-heroicons-x-mark"
           size="sm"
           variant="danger"
           title="Close terminal"
@@ -44,8 +44,8 @@
       </div>
     </div>
 
-    <div 
-      ref="terminalContainer" 
+    <div
+      ref="terminalContainer"
       class="terminal-container"
       :class="{ 'terminal-loading': connectionStatus === 'connecting' }"
     />
@@ -73,35 +73,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import type { BasicTerminal } from '~/stores/terminalManager';
-import { useTerminalManagerStore } from '~/stores/terminalManager';
-import AppButton from '~/components/ui/AppButton.vue';
+import { ref, onMounted, onUnmounted, watch, nextTick } from "vue";
+import type { BasicTerminal } from "~/stores/terminalManager";
+import { useTerminalManagerStore } from "~/stores/terminalManager";
+import AppButton from "~/components/ui/AppButton.vue";
 
 // Dynamic imports for xterm.js to avoid SSR issues
-let Terminal: any = null;
-let FitAddon: any = null;
+let Terminal: typeof import("@xterm/xterm").Terminal | null = null;
+let FitAddon: typeof import("@xterm/addon-fit").FitAddon | null = null;
 
 interface Props {
   terminal: BasicTerminal;
 }
 
 interface Emits {
-  (e: 'remove'): void;
+  (e: "remove"): void;
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
+defineEmits<Emits>();
 
 const terminalStore = useTerminalManagerStore();
 const terminalContainer = ref<HTMLElement>();
 
 // Terminal instance references
-let xterm: any = null;
-let fitAddon: any = null;
+let xterm: import("@xterm/xterm").Terminal | null = null;
+let fitAddon: import("@xterm/addon-fit").FitAddon | null = null;
 
 // Connection status from WebSocket manager
-const connectionStatus = ref<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
+const connectionStatus = ref<"connecting" | "connected" | "disconnected" | "error">("disconnected");
 
 /**
  * Initialize xterm.js libraries dynamically
@@ -112,17 +112,18 @@ const initializeXTermLibraries = async () => {
   try {
     // Dynamic imports to avoid SSR issues
     const [terminalModule, fitAddonModule] = await Promise.all([
-      import('@xterm/xterm'),
-      import('@xterm/addon-fit')
+      import("@xterm/xterm"),
+      import("@xterm/addon-fit"),
     ]);
 
     Terminal = terminalModule.Terminal;
     FitAddon = fitAddonModule.FitAddon;
 
     // Import CSS dynamically
-    await import('@xterm/xterm/css/xterm.css');
+    await import("@xterm/xterm/css/xterm.css");
   } catch (error) {
-    console.error('Failed to load xterm.js libraries:', error);
+    // eslint-disable-next-line no-console
+    console.error("Failed to load xterm.js libraries:", error);
     throw error;
   }
 };
@@ -137,36 +138,42 @@ const initializeTerminal = async (): Promise<void> => {
     await initializeXTermLibraries();
 
     // Create xterm instance with our theme
+    if (!Terminal) {
+      throw new Error("Terminal class not loaded");
+    }
     xterm = new Terminal({
       cursorBlink: true,
       fontSize: 14,
       fontFamily: '"Cascadia Code", "Fira Code", "JetBrains Mono", monospace',
       theme: {
-        background: '#1a1b26',
-        foreground: '#c0caf5',
-        cursor: '#c0caf5',
-        selection: '#33467C',
-        black: '#15161E',
-        red: '#f7768e',
-        green: '#9ece6a',
-        yellow: '#e0af68',
-        blue: '#7aa2f7',
-        magenta: '#bb9af7',
-        cyan: '#7dcfff',
-        white: '#a9b1d6',
-        brightBlack: '#414868',
-        brightRed: '#f7768e',
-        brightGreen: '#9ece6a',
-        brightYellow: '#e0af68',
-        brightBlue: '#7aa2f7',
-        brightMagenta: '#bb9af7',
-        brightCyan: '#7dcfff',
-        brightWhite: '#c0caf5'
+        background: "#1a1b26",
+        foreground: "#c0caf5",
+        cursor: "#c0caf5",
+        selectionBackground: "#33467C",
+        black: "#15161E",
+        red: "#f7768e",
+        green: "#9ece6a",
+        yellow: "#e0af68",
+        blue: "#7aa2f7",
+        magenta: "#bb9af7",
+        cyan: "#7dcfff",
+        white: "#a9b1d6",
+        brightBlack: "#414868",
+        brightRed: "#f7768e",
+        brightGreen: "#9ece6a",
+        brightYellow: "#e0af68",
+        brightBlue: "#7aa2f7",
+        brightMagenta: "#bb9af7",
+        brightCyan: "#7dcfff",
+        brightWhite: "#c0caf5",
       },
-      allowProposedApi: true
+      allowProposedApi: true,
     });
 
     // Add fit addon for responsive sizing
+    if (!FitAddon) {
+      throw new Error("FitAddon class not loaded");
+    }
     fitAddon = new FitAddon();
     xterm.loadAddon(fitAddon);
 
@@ -188,12 +195,18 @@ const initializeTerminal = async (): Promise<void> => {
 
     // Load existing output history
     const outputHistory = terminalStore.getTerminalOutput(props.terminal.id);
-    outputHistory.forEach(output => xterm!.write(output));
+    outputHistory.forEach(output => {
+      if (xterm) {
+        xterm.write(output);
+      }
+    });
 
-    console.log('XTerm terminal initialized successfully');
+    // eslint-disable-next-line no-console
+    console.log("XTerm terminal initialized successfully");
   } catch (error) {
-    console.error('Failed to initialize terminal:', error);
-    connectionStatus.value = 'error';
+    // eslint-disable-next-line no-console
+    console.error("Failed to initialize terminal:", error);
+    connectionStatus.value = "error";
   }
 };
 
@@ -225,14 +238,14 @@ const reconnect = async (): Promise<void> => {
  */
 const formatConnectionStatus = (status: string): string => {
   switch (status) {
-    case 'connecting':
-      return 'Connecting...';
-    case 'connected':
-      return 'Connected';
-    case 'disconnected':
-      return 'Disconnected';
-    case 'error':
-      return 'Error';
+    case "connecting":
+      return "Connecting...";
+    case "connected":
+      return "Connected";
+    case "disconnected":
+      return "Disconnected";
+    case "error":
+      return "Error";
     default:
       return status;
   }
@@ -243,7 +256,7 @@ const formatConnectionStatus = (status: string): string => {
  */
 const formatWorkingDirectory = (path: string): string => {
   if (path.length > 30) {
-    return '...' + path.slice(-27);
+    return "..." + path.slice(-27);
   }
   return path;
 };
@@ -255,17 +268,17 @@ watch(
   () => terminalStore.getTerminalOutput(props.terminal.id),
   (newOutput, oldOutput) => {
     if (!xterm || !newOutput) return;
-    
+
     const oldLength = oldOutput?.length || 0;
     const newLines = newOutput.slice(oldLength);
-    
+
     newLines.forEach(line => {
       if (xterm) {
         xterm.write(line);
       }
     });
   },
-  { deep: true }
+  { deep: true },
 );
 
 /**
@@ -274,12 +287,12 @@ watch(
 watch(
   () => {
     const connection = terminalStore.webSocketManager.getConnection(props.terminal.id);
-    return connection?.connection.value.status || 'disconnected';
+    return connection?.connection.value.status || "disconnected";
   },
   (newStatus) => {
     connectionStatus.value = newStatus;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 /**
@@ -290,7 +303,8 @@ const handleResize = (): void => {
     try {
       fitAddon.fit();
     } catch (error) {
-      console.warn('Failed to fit terminal:', error);
+      // eslint-disable-next-line no-console
+      console.warn("Failed to fit terminal:", error);
     }
   }
 };
@@ -298,10 +312,10 @@ const handleResize = (): void => {
 // Lifecycle management
 onMounted(async () => {
   await initializeTerminal();
-  
+
   // Add resize listener
-  window.addEventListener('resize', handleResize);
-  
+  window.addEventListener("resize", handleResize);
+
   // Focus terminal after a short delay
   setTimeout(() => {
     if (xterm) {
@@ -311,7 +325,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize);
+  window.removeEventListener("resize", handleResize);
   cleanupTerminal();
 });
 </script>
@@ -410,7 +424,7 @@ onUnmounted(() => {
 }
 
 .terminal-loading {
-  background-image: 
+  background-image:
     linear-gradient(
       45deg,
       transparent 25%,

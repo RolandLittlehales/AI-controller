@@ -3,7 +3,8 @@ import { ref, readonly, computed } from "vue";
 import { useSystemResources } from "~/composables/useSystemResources";
 import { useGitRepository } from "~/composables/useGitRepository";
 import { useMultiTerminalManager } from "~/composables/useMultiTerminalWebSocket";
-import type { MultiTerminalManager } from "~/composables/useMultiTerminalWebSocket";
+import { logger } from "~/utils/logger";
+// import type { MultiTerminalManager } from "~/composables/useMultiTerminalWebSocket";
 
 export interface GitTerminalInfo {
   hasWorktree: boolean;
@@ -223,36 +224,6 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
   };
 
   /**
-   * Create terminal with WebSocket connection
-   * @param options - Terminal creation options
-   * @returns Promise<string> Terminal ID
-   */
-  const createTerminalWithWebSocket = async (options: CreateTerminalOptions): Promise<string> => {
-    const terminalId = createTerminal(options);
-    const terminal = terminals.value.get(terminalId);
-    
-    if (!terminal) {
-      throw new Error("Failed to create terminal");
-    }
-
-    // Create WebSocket connection
-    const connection = webSocketManager.createConnection({
-      terminalId,
-      workingDirectory: terminal.workingDirectory || options.workingDirectory,
-      onOutput: (output) => handleTerminalOutput(terminalId, output),
-      onError: (error) => handleTerminalError(terminalId, error),
-      onStatusChange: (status) => updateTerminalStatus(terminalId, status),
-      onConnected: (serverTerminalId) => handleTerminalConnected(terminalId, serverTerminalId),
-      onDisconnected: () => handleTerminalDisconnected(terminalId)
-    });
-
-    // Start connection
-    await connection.connect();
-    
-    return terminalId;
-  };
-
-  /**
    * Handle terminal output from WebSocket
    */
   const handleTerminalOutput = (terminalId: string, output: string): void => {
@@ -265,7 +236,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * Handle terminal error from WebSocket
    */
   const handleTerminalError = (terminalId: string, error: Error): void => {
-    console.error(`Terminal ${terminalId} error:`, error);
+    logger.error(`Terminal ${terminalId} error:`, error);
     updateTerminalStatus(terminalId, "error");
   };
 
@@ -274,7 +245,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    */
   const handleTerminalConnected = (terminalId: string, serverTerminalId: string): void => {
     updateTerminalStatus(terminalId, "connected");
-    console.info(`Terminal ${terminalId} connected with server ID ${serverTerminalId}`);
+    logger.info(`Terminal ${terminalId} connected with server ID ${serverTerminalId}`);
   };
 
   /**
@@ -282,6 +253,36 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    */
   const handleTerminalDisconnected = (terminalId: string): void => {
     updateTerminalStatus(terminalId, "disconnected");
+  };
+
+  /**
+   * Create terminal with WebSocket connection
+   * @param options - Terminal creation options
+   * @returns Promise<string> Terminal ID
+   */
+  const createTerminalWithWebSocket = async (options: CreateTerminalOptions): Promise<string> => {
+    const terminalId = createTerminal(options);
+    const terminal = terminals.value.get(terminalId);
+
+    if (!terminal) {
+      throw new Error("Failed to create terminal");
+    }
+
+    // Create WebSocket connection
+    const connection = webSocketManager.createConnection({
+      terminalId,
+      workingDirectory: terminal.workingDirectory || options.workingDirectory || undefined,
+      onOutput: (output) => handleTerminalOutput(terminalId, output),
+      onError: (error) => handleTerminalError(terminalId, error),
+      onStatusChange: (status) => updateTerminalStatus(terminalId, status),
+      onConnected: (serverTerminalId) => handleTerminalConnected(terminalId, serverTerminalId),
+      onDisconnected: () => handleTerminalDisconnected(terminalId),
+    });
+
+    // Start connection
+    await connection.connect();
+
+    return terminalId;
   };
 
   /**
@@ -314,10 +315,10 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
       connection.disconnect();
       webSocketManager.removeConnection(terminalId);
     }
-    
+
     // Clean up outputs
     terminalOutputs.value.delete(terminalId);
-    
+
     // Remove from terminals map
     removeTerminal(terminalId);
   };

@@ -139,7 +139,7 @@ const createTerminal = async () => {
   try {
     // Phase 2B: Create terminal with WebSocket connection
     const terminalId = await terminalStore.createTerminalWithWebSocket({
-      name: form.value.name.trim()
+      name: form.value.name.trim(),
     });
 
     // Set the new terminal as active

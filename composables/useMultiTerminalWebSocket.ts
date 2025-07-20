@@ -5,10 +5,10 @@ import { logger } from "~/utils/logger";
 
 /**
  * Multi-Terminal WebSocket Management
- * 
+ *
  * Handles individual WebSocket connections per terminal with:
  * - Per-terminal connection lifecycle management
- * - Coordinated multi-terminal state management  
+ * - Coordinated multi-terminal state management
  * - Git worktree working directory integration
  * - Isolated terminal input/output streams
  */
@@ -16,18 +16,18 @@ import { logger } from "~/utils/logger";
 export interface TerminalConnection {
   terminalId: string;
   websocket: WebSocket | null;
-  status: 'connecting' | 'connected' | 'disconnected' | 'error';
+  status: "connecting" | "connected" | "disconnected" | "error";
   lastActivity: Date;
-  workingDirectory?: string;
+  workingDirectory?: string | undefined;
   retryCount: number;
 }
 
 export interface MultiTerminalWebSocketOptions {
   terminalId: string;
-  workingDirectory?: string;
+  workingDirectory?: string | undefined;
   onOutput?: (output: string) => void;
   onError?: (error: Error) => void;
-  onStatusChange?: (status: TerminalConnection['status']) => void;
+  onStatusChange?: (status: TerminalConnection["status"]) => void;
   onConnected?: (terminalId: string) => void;
   onDisconnected?: () => void;
 }
@@ -48,34 +48,35 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
   const connection = ref<TerminalConnection>({
     terminalId: options.terminalId,
     websocket: null,
-    status: 'disconnected',
+    status: "disconnected",
     lastActivity: new Date(),
-    workingDirectory: options.workingDirectory,
-    retryCount: 0
+    workingDirectory: options.workingDirectory || undefined,
+    retryCount: 0,
   });
 
   /**
    * Handle WebSocket connection opening
    */
   const handleConnectionOpen = () => {
-    logger.info('Terminal WebSocket connected', { terminalId: options.terminalId });
-    connection.value.status = 'connected';
+    logger.info("Terminal WebSocket connected", { terminalId: options.terminalId });
+    connection.value.status = "connected";
     connection.value.lastActivity = new Date();
     connection.value.retryCount = 0;
-    
+
     options.onStatusChange?.(connection.value.status);
-    
+
     // Request terminal creation with working directory
     const createMessage: WebSocketMessage = {
-      type: 'terminal-create',
+      type: "terminal-create",
       data: {
         cols: 100,
         rows: 30,
-        cwd: options.workingDirectory || process.cwd?.() || '/'
+        cwd: options.workingDirectory || process.cwd?.() || "/",
       },
-      timestamp: new Date()
+      timestamp: new Date(),
     };
-    
+
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
     sendMessage(createMessage);
   };
 
@@ -86,59 +87,62 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
     try {
       const message: WebSocketMessage = JSON.parse(data);
       connection.value.lastActivity = new Date();
-      
+
       switch (message.type) {
-        case 'terminal-created':
+        case "terminal-created":
           if (message.terminalId) {
-            logger.info('Terminal created successfully', { 
+            logger.info("Terminal created successfully", {
               clientTerminalId: options.terminalId,
-              serverTerminalId: message.terminalId 
+              serverTerminalId: message.terminalId,
             });
             options.onConnected?.(message.terminalId);
           }
           break;
 
-        case 'terminal-data':
-          if (message.data && typeof message.data.output === 'string') {
+        case "terminal-data":
+          if (message.data && typeof message.data.output === "string") {
             options.onOutput?.(message.data.output);
           }
           break;
 
-        case 'terminal-exit':
-          logger.info('Terminal process exited', { terminalId: options.terminalId });
-          options.onOutput?.('\r\n\x1b[31mTerminal process exited\x1b[0m\r\n');
+        case "terminal-exit":
+          logger.info("Terminal process exited", { terminalId: options.terminalId });
+          options.onOutput?.("\r\n\x1b[31mTerminal process exited\x1b[0m\r\n");
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
           setTimeout(() => disconnect(), 1000);
           break;
 
-        case 'terminal-destroyed':
-          logger.info('Terminal destroyed by server', { terminalId: options.terminalId });
+        case "terminal-destroyed":
+          logger.info("Terminal destroyed by server", { terminalId: options.terminalId });
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
           disconnect();
           break;
 
-        case 'error':
-          const errorMsg = message.data?.message || 'Terminal error';
-          logger.error('Terminal WebSocket error', { 
-            terminalId: options.terminalId, 
-            error: errorMsg 
+        case "error": {
+          const errorMsg = (typeof message.data?.message === "string" ? message.data.message : "Terminal error");
+          logger.error("Terminal WebSocket error", {
+            terminalId: options.terminalId,
+            error: errorMsg,
           });
           options.onError?.(new Error(errorMsg));
-          connection.value.status = 'error';
+          connection.value.status = "error";
           options.onStatusChange?.(connection.value.status);
           break;
+        }
 
         default:
-          logger.warn('Unknown WebSocket message type', { 
-            type: message.type, 
-            terminalId: options.terminalId 
+          logger.warn("Unknown WebSocket message type", {
+            type: message.type,
+            terminalId: options.terminalId,
           });
       }
     } catch (error) {
-      logger.error('Failed to parse WebSocket message', { 
-        error, 
+      logger.error("Failed to parse WebSocket message", {
+        error,
         terminalId: options.terminalId,
-        data 
+        data,
       });
-      options.onError?.(new Error('Invalid message format'));
+      options.onError?.(new Error("Invalid message format"));
     }
   };
 
@@ -146,27 +150,27 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
    * Handle WebSocket errors
    */
   const handleError = (event: Event) => {
-    logger.error('Terminal WebSocket error', { 
-      terminalId: options.terminalId, 
-      event 
+    logger.error("Terminal WebSocket error", {
+      terminalId: options.terminalId,
+      event,
     });
-    connection.value.status = 'error';
+    connection.value.status = "error";
     options.onStatusChange?.(connection.value.status);
-    options.onError?.(new Error('WebSocket connection error'));
+    options.onError?.(new Error("WebSocket connection error"));
   };
 
   /**
    * Handle WebSocket connection closing
    */
   const handleClose = (event: CloseEvent) => {
-    logger.info('Terminal WebSocket closed', { 
+    logger.info("Terminal WebSocket closed", {
       terminalId: options.terminalId,
       code: event.code,
       reason: event.reason,
-      wasClean: event.wasClean
+      wasClean: event.wasClean,
     });
-    
-    connection.value.status = 'disconnected';
+
+    connection.value.status = "disconnected";
     connection.value.websocket = null;
     options.onStatusChange?.(connection.value.status);
     options.onDisconnected?.();
@@ -177,8 +181,8 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
    */
   const sendMessage = (message: WebSocketMessage | TerminalMessage): boolean => {
     if (!connection.value.websocket || connection.value.websocket.readyState !== WebSocket.OPEN) {
-      logger.warn('Cannot send message: WebSocket not connected', { 
-        terminalId: options.terminalId 
+      logger.warn("Cannot send message: WebSocket not connected", {
+        terminalId: options.terminalId,
       });
       return false;
     }
@@ -188,10 +192,10 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
       connection.value.lastActivity = new Date();
       return true;
     } catch (error) {
-      logger.error('Failed to send WebSocket message', { 
-        error, 
+      logger.error("Failed to send WebSocket message", {
+        error,
         terminalId: options.terminalId,
-        messageType: message.type 
+        messageType: message.type,
       });
       return false;
     }
@@ -201,26 +205,26 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
    * Connect to WebSocket terminal service
    */
   const connect = async (): Promise<void> => {
-    if (connection.value.status === 'connecting' || connection.value.status === 'connected') {
-      logger.warn('Connect attempted while already connecting or connected', {
+    if (connection.value.status === "connecting" || connection.value.status === "connected") {
+      logger.warn("Connect attempted while already connecting or connected", {
         terminalId: options.terminalId,
-        status: connection.value.status
+        status: connection.value.status,
       });
       return;
     }
 
-    connection.value.status = 'connecting';
+    connection.value.status = "connecting";
     options.onStatusChange?.(connection.value.status);
 
     try {
       // Build WebSocket URL with terminal-specific parameters
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const wsUrl = new URL(`${protocol}//${window.location.host}/api/ws/terminal`);
-      
+
       // Add terminal-specific parameters
-      wsUrl.searchParams.set('terminalId', options.terminalId);
+      wsUrl.searchParams.set("terminalId", options.terminalId);
       if (options.workingDirectory) {
-        wsUrl.searchParams.set('cwd', options.workingDirectory);
+        wsUrl.searchParams.set("cwd", options.workingDirectory);
       }
 
       const ws = new WebSocket(wsUrl.toString());
@@ -232,18 +236,18 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
       ws.onerror = handleError;
       ws.onclose = handleClose;
 
-      logger.info('WebSocket connection initiated', { 
+      logger.info("WebSocket connection initiated", {
         terminalId: options.terminalId,
-        url: wsUrl.toString() 
+        url: wsUrl.toString(),
       });
     } catch (error) {
-      logger.error('Failed to initiate WebSocket connection', { 
-        error, 
-        terminalId: options.terminalId 
+      logger.error("Failed to initiate WebSocket connection", {
+        error,
+        terminalId: options.terminalId,
       });
-      connection.value.status = 'error';
+      connection.value.status = "error";
       options.onStatusChange?.(connection.value.status);
-      options.onError?.(new Error('Failed to connect to terminal'));
+      options.onError?.(new Error("Failed to connect to terminal"));
     }
   };
 
@@ -252,22 +256,22 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
    */
   const disconnect = (): void => {
     if (connection.value.websocket) {
-      if (connection.value.status === 'connected') {
+      if (connection.value.status === "connected") {
         // Send terminal destroy message
         const destroyMessage: WebSocketMessage = {
-          type: 'terminal-destroy',
+          type: "terminal-destroy",
           terminalId: options.terminalId,
           data: {},
-          timestamp: new Date()
+          timestamp: new Date(),
         };
         sendMessage(destroyMessage);
       }
 
-      connection.value.websocket.close(1000, 'Client disconnect');
+      connection.value.websocket.close(1000, "Client disconnect");
       connection.value.websocket = null;
     }
 
-    connection.value.status = 'disconnected';
+    connection.value.status = "disconnected";
     options.onStatusChange?.(connection.value.status);
   };
 
@@ -275,18 +279,18 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
    * Send terminal input data
    */
   const sendInput = (input: string): boolean => {
-    if (connection.value.status !== 'connected') {
-      logger.warn('Cannot send input: terminal not connected', { 
-        terminalId: options.terminalId 
+    if (connection.value.status !== "connected") {
+      logger.warn("Cannot send input: terminal not connected", {
+        terminalId: options.terminalId,
       });
       return false;
     }
 
     const message: TerminalMessage = {
-      type: 'terminal-data',
+      type: "terminal-data",
       terminalId: options.terminalId,
       data: { input },
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     return sendMessage(message);
@@ -296,18 +300,18 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
    * Send terminal resize event
    */
   const resize = (cols: number, rows: number): boolean => {
-    if (connection.value.status !== 'connected') {
-      logger.warn('Cannot resize: terminal not connected', { 
-        terminalId: options.terminalId 
+    if (connection.value.status !== "connected") {
+      logger.warn("Cannot resize: terminal not connected", {
+        terminalId: options.terminalId,
       });
       return false;
     }
 
     const message: WebSocketMessage = {
-      type: 'terminal-resize',
+      type: "terminal-resize",
       terminalId: options.terminalId,
       data: { cols, rows },
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     return sendMessage(message);
@@ -318,14 +322,14 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
    */
   const reconnect = async (): Promise<void> => {
     disconnect();
-    
+
     connection.value.retryCount++;
     const delay = Math.min(1000 * Math.pow(2, connection.value.retryCount - 1), 10000);
-    
-    logger.info('Reconnecting terminal WebSocket', { 
+
+    logger.info("Reconnecting terminal WebSocket", {
       terminalId: options.terminalId,
       retryCount: connection.value.retryCount,
-      delay 
+      delay,
     });
 
     await new Promise(resolve => setTimeout(resolve, delay));
@@ -338,7 +342,7 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
     disconnect,
     sendInput,
     resize,
-    reconnect
+    reconnect,
   };
 }
 
@@ -346,16 +350,17 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
  * Multi-terminal WebSocket coordination manager
  */
 export function useMultiTerminalManager() {
-  const connections = ref(new Map<string, TerminalConnectionManager>());
+  const connections = ref<Map<string, TerminalConnectionManager>>(new Map());
 
   /**
    * Create a new terminal connection
    */
   const createConnection = (options: MultiTerminalWebSocketOptions): TerminalConnectionManager => {
     const connectionManager = useMultiTerminalWebSocket(options);
+    // @ts-expect-error - TypeScript strict mode issue with Map type inference
     connections.value.set(options.terminalId, connectionManager);
-    
-    logger.info('Created terminal connection', { terminalId: options.terminalId });
+
+    logger.info("Created terminal connection", { terminalId: options.terminalId });
     return connectionManager;
   };
 
@@ -367,7 +372,7 @@ export function useMultiTerminalManager() {
     if (connection) {
       connection.disconnect();
       connections.value.delete(terminalId);
-      logger.info('Removed terminal connection', { terminalId });
+      logger.info("Removed terminal connection", { terminalId });
     }
   };
 
@@ -375,18 +380,16 @@ export function useMultiTerminalManager() {
    * Get existing connection
    */
   const getConnection = (terminalId: string): TerminalConnectionManager | undefined => {
-    return connections.value.get(terminalId);
+    return connections.value.get(terminalId) as TerminalConnectionManager | undefined;
   };
 
   /**
    * Get all connection statuses
    */
-  const getAllStatuses = (): Record<string, TerminalConnection['status']> => {
-    const statuses: Record<string, TerminalConnection['status']> = {};
+  const getAllStatuses = (): Record<string, TerminalConnection["status"]> => {
+    const statuses: Record<string, TerminalConnection["status"]> = {};
     for (const [terminalId, connectionManager] of connections.value.entries()) {
-      if (connectionManager && connectionManager.connection && connectionManager.connection.value) {
-        statuses[terminalId] = connectionManager.connection.value.status;
-      }
+      statuses[terminalId] = (connectionManager as unknown as TerminalConnectionManager).connection.value.status;
     }
     return statuses;
   };
@@ -395,11 +398,11 @@ export function useMultiTerminalManager() {
    * Disconnect all terminals
    */
   const disconnectAll = (): void => {
-    for (const [terminalId, connection] of connections.value.entries()) {
+    for (const [, connection] of connections.value.entries()) {
       connection.disconnect();
     }
     connections.value.clear();
-    logger.info('Disconnected all terminal connections');
+    logger.info("Disconnected all terminal connections");
   };
 
   return {
@@ -408,7 +411,7 @@ export function useMultiTerminalManager() {
     removeConnection,
     getConnection,
     getAllStatuses,
-    disconnectAll
+    disconnectAll,
   };
 }
 
