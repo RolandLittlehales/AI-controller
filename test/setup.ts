@@ -33,14 +33,19 @@ vi.mock("nuxt/app", () => ({
   })),
 }));
 
-// Mock ClientOnly component
+// Mock Nuxt components and icons
 vi.mock("#components", () => ({
   ClientOnly: {
     name: "ClientOnly",
-    render: (props: Record<string, unknown>, { slots }: { slots: Record<string, unknown> }) => {
-      const slotsObj = slots as Record<string, () => unknown>;
-      return slotsObj.default?.();
+    template: '<template v-if="mounted"><slot /></template><template v-else><slot name="fallback" /></template>',
+    data() {
+      return { mounted: true }; // Always mounted in tests
     },
+  },
+  Icon: {
+    name: "Icon",
+    template: '<span class="mock-icon" :data-icon="name"><slot /></span>',
+    props: ["name", "size"],
   },
 }));
 
@@ -91,3 +96,5 @@ vi.mock("node:fs", async () => {
     ...memfs.fs,
   };
 });
+
+// Logger mock is handled in individual test files as needed

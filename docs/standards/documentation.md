@@ -109,7 +109,42 @@ Documentation MUST:
 
 ### 4.1 JSDoc Standards
 
-All TypeScript functions, classes, and interfaces MUST include JSDoc comments:
+All TypeScript functions, classes, and interfaces MUST include JSDoc comments placed IMMEDIATELY above the code element they document:
+
+#### 4.1.1 JSDoc Comment Placement (CRITICAL)
+
+JSDoc comments MUST be placed directly above the code element they document with NO intervening code:
+
+```typescript
+// ✅ CORRECT - JSDoc directly above the function it documents
+/**
+ * Terminal State Management Store with Git Integration
+ * 
+ * Manages multiple terminal instances with:
+ * - In-memory terminal tracking
+ * - System resource limit enforcement
+ */
+export const useTerminalManagerStore = defineStore("terminalManager", () => {
+
+// ❌ INCORRECT - JSDoc appears to document interface but should be above function
+/**
+ * Terminal State Management Store...
+ */
+export interface SomeInterface {
+  // interface content
+}
+export const useTerminalManagerStore = defineStore("terminalManager", () => {
+```
+
+**JSDoc Placement Rules:**
+- JSDoc applies to the NEXT line of code after the comment block
+- MUST NOT have blank lines between JSDoc and the documented element
+- MUST NOT have other code elements between JSDoc and its target
+- Each code element MUST have its own JSDoc comment if documentation is needed
+
+#### 4.1.2 JSDoc Content Standards
+
+JSDoc comments MUST include comprehensive documentation:
 
 ```typescript
 /**

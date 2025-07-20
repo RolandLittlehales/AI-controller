@@ -128,14 +128,20 @@
         </div>
       </div>
     </div>
+
+    <!-- Terminal Creation Modal -->
+    <CreateTerminalModal
+      v-model="showCreateModal"
+      @terminal-created="handleTerminalCreated"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useTerminalManagerStore } from "~/stores/terminalManager";
 import AppButton from "~/components/ui/AppButton.vue";
-import { logger } from "~/utils/logger";
+import CreateTerminalModal from "./CreateTerminalModal.vue";
 
 /**
  * Terminal Display Component
@@ -149,27 +155,30 @@ import { logger } from "~/utils/logger";
 
 const terminalStore = useTerminalManagerStore();
 
+// Local state
+const showCreateModal = ref(false);
+
 // Computed properties
 const activeTerminal = computed(() => terminalStore.getActiveTerminal);
 const canCreateTerminal = computed(() => terminalStore.canCreateTerminal);
 
 /**
- * Create the first terminal from the empty state
+ * Open the create terminal modal from the empty state
  */
 const createFirstTerminal = (): void => {
   if (!canCreateTerminal.value) return;
+  showCreateModal.value = true;
+};
 
-  try {
-    const terminalId = terminalStore.createTerminal("Terminal 1");
-    terminalStore.setActiveTerminal(terminalId);
-
-    // Simulate connection after creation
-    setTimeout(() => {
-      terminalStore.updateTerminalStatus(terminalId, "connected");
-    }, 500);
-  } catch (error) {
-    logger.error("Failed to create first terminal", { error: error instanceof Error ? error.message : String(error) });
-  }
+/**
+ * Handle terminal creation from modal
+ * @param terminalId - ID of the created terminal
+ */
+const handleTerminalCreated = (terminalId: string): void => {
+  // Simulate brief connection delay for better UX
+  setTimeout(() => {
+    terminalStore.updateTerminalStatus(terminalId, "connected");
+  }, 500);
 };
 
 /**

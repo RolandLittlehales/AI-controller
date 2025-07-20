@@ -8,10 +8,9 @@
         icon="i-heroicons-plus"
         size="sm"
         variant="primary"
-        :disabled="!canCreateTerminal || isCreatingTerminal"
-        :loading="isCreatingTerminal"
+        :disabled="!canCreateTerminal"
         :title="getCreateButtonTitle()"
-        @click="createNewTerminal"
+        @click="showCreateModal = true"
       >
         New
       </AppButton>
@@ -44,6 +43,9 @@
         <div class="terminal-meta">
           <span class="terminal-id">{{ terminal.id.slice(0, 8) }}</span>
           <span class="created-time">{{ formatTime(terminal.createdAt) }}</span>
+          <span v-if="terminal.git?.hasWorktree" class="git-info" :title="`Git: ${terminal.git.branchName}`">
+            🌿 {{ terminal.git.branchName }}
+          </span>
         </div>
       </div>
 
@@ -54,6 +56,12 @@
         <p class="empty-subtitle">Click "New" to create your first terminal</p>
       </div>
     </div>
+
+    <!-- Terminal Creation Modal -->
+    <CreateTerminalModal
+      v-model="showCreateModal"
+      @terminal-created="handleTerminalCreated"
+    />
   </div>
 </template>
 
@@ -61,8 +69,8 @@
 import { computed, ref } from "vue";
 import { useTerminalManagerStore } from "~/stores/terminalManager";
 import ResourceMonitor from "./ResourceMonitor.vue";
+import CreateTerminalModal from "./CreateTerminalModal.vue";
 import AppButton from "~/components/ui/AppButton.vue";
-import { logger } from "~/utils/logger";
 
 /**
  * Terminal Sidebar Component
@@ -78,41 +86,21 @@ import { logger } from "~/utils/logger";
 const terminalStore = useTerminalManagerStore();
 
 // Local state
-const isCreatingTerminal = ref(false);
-let terminalCounter = 1;
+const showCreateModal = ref(false);
 
 // Computed properties
 const terminalList = computed(() => Array.from(terminalStore.getAllTerminals));
 const canCreateTerminal = computed(() => terminalStore.canCreateTerminal);
 
 /**
- * Create a new terminal with user-friendly numbering
+ * Handle terminal creation from modal
+ * @param terminalId - ID of the created terminal
  */
-const createNewTerminal = async (): Promise<void> => {
-  if (!canCreateTerminal.value || isCreatingTerminal.value) {
-    return;
-  }
-
-  isCreatingTerminal.value = true;
-
-  try {
-    const terminalName = `Terminal ${terminalCounter++}`;
-    const terminalId = terminalStore.createTerminal(terminalName);
-
-    // Automatically set the new terminal as active
-    terminalStore.setActiveTerminal(terminalId);
-
-    // Simulate brief connection delay for better UX
-    setTimeout(() => {
-      terminalStore.updateTerminalStatus(terminalId, "connected");
-    }, 500);
-
-  } catch (error) {
-    // Handle error - could show toast notification in the future
-    logger.error("Failed to create terminal", { error: error instanceof Error ? error.message : String(error) });
-  } finally {
-    isCreatingTerminal.value = false;
-  }
+const handleTerminalCreated = (terminalId: string): void => {
+  // Simulate brief connection delay for better UX
+  setTimeout(() => {
+    terminalStore.updateTerminalStatus(terminalId, "connected");
+  }, 500);
 };
 
 /**
@@ -150,9 +138,6 @@ const formatTime = (date: Date): string => {
  * @returns Tooltip text
  */
 const getCreateButtonTitle = (): string => {
-  if (isCreatingTerminal.value) {
-    return "Creating terminal...";
-  }
   if (!canCreateTerminal.value) {
     return `Maximum terminals reached (${terminalStore.terminalCount}/limit)`;
   }
@@ -283,6 +268,19 @@ const getCreateButtonTitle = (): string => {
 
 .created-time {
   font-size: var(--font-size-xs);
+}
+
+.git-info {
+  font-size: var(--font-size-xs);
+  color: var(--color-success);
+  font-weight: var(--font-weight-medium);
+  background-color: var(--color-success-light);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .empty-state {

@@ -6,12 +6,28 @@ import IndexPage from "./index.vue";
 // Mock $fetch for settings API calls
 global.$fetch = vi.fn().mockResolvedValue({}) as unknown as typeof $fetch;
 
-// Mock Terminal component - it has its own comprehensive tests
-vi.mock("~/components/Terminal.vue", () => ({
+// Mock logger to prevent test output pollution
+vi.mock("~/utils/logger", () => ({
+  logger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
+// Mock terminal components - they have their own comprehensive tests
+vi.mock("~/components/terminal/TerminalSidebar.vue", () => ({
   default: {
-    name: "Terminal",
-    template: '<div class="mock-terminal">Terminal Component</div>',
-    props: ["autoConnect"],
+    name: "TerminalSidebar",
+    template: '<div class="mock-terminal-sidebar">Terminal Sidebar</div>',
+  },
+}));
+
+vi.mock("~/components/terminal/TerminalDisplay.vue", () => ({
+  default: {
+    name: "TerminalDisplay",
+    template: '<div class="mock-terminal-display">Terminal Display</div>',
   },
 }));
 
@@ -25,14 +41,7 @@ vi.mock("~/components/ui/AppButton.vue", () => ({
   },
 }));
 
-// Mock ClientOnly component for testing
-const ClientOnlyMock = {
-  name: "ClientOnly",
-  template: '<template v-if="mounted"><slot /></template><template v-else><slot name="fallback" /></template>',
-  data() {
-    return { mounted: false };
-  },
-};
+// ClientOnly is mocked globally in test/setup.ts
 
 beforeEach(() => {
   setActivePinia(createPinia());
@@ -121,19 +130,14 @@ describe("IndexPage", () => {
     expect(wrapper.find(".header-subtitle").text()).toBe("A powerful web application for managing multiple terminal-based AI instances");
   });
 
-  it("should include Terminal component wrapped in ClientOnly", () => {
-    const wrapper = mount(IndexPage, {
-      global: {
-        stubs: {
-          ClientOnly: ClientOnlyMock,
-        },
-      },
-    });
+  it("should include terminal components wrapped in ClientOnly", () => {
+    const wrapper = mount(IndexPage);
 
     // Check for terminal section container
     expect(wrapper.find(".terminal-section").exists()).toBe(true);
-    // In testing environment, ClientOnly renders the fallback
-    expect(wrapper.text()).toContain("Loading terminals...");
+    // With global ClientOnly mock, the components should be mounted
+    expect(wrapper.find(".mock-terminal-sidebar").exists()).toBe(true);
+    expect(wrapper.find(".mock-terminal-display").exists()).toBe(true);
   });
 
   it("should have terminal section with proper styling", () => {

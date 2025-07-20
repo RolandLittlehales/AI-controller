@@ -530,30 +530,891 @@ After completing Steps 1-6, you should have:
 
 ---
 
-## 🔄 **Next Phase Preview**
+## 🔄 **Phase 2: Smart Resource Management & Enhanced Cleanup**
 
-**Phase 2A**: Git Integration (KISS approach)
-- Step 7: Basic git repository validation
-- Step 8: Simple worktree creation
-- Step 9: Update terminal creation UI
+> **Philosophy**: Building on Phase 1 foundation with git integration, real terminal connections, and robust persistence
+> 
+> Each step maintains **KISS principles** while adding production-ready functionality for AI-assisted development workflows.
 
-**Phase 2B**: WebSocket Integration
-- Step 10: Basic WebSocket connection per terminal
-- Step 11: Replace placeholder with real terminal
+---
 
-**Phase 2C**: Persistence & Cleanup
-- Step 12: File system state persistence
-- Step 13: Startup cleanup logic
+### **Phase 2A: Git Integration**
+
+#### **Step 7: Basic Git Repository Validation** ⏱️ *~45 minutes*
+**Goal**: Validate git repositories and detect branch information
+
+**Prerequisites:**
+- ✅ Phase 1 completed (Steps 1-6)
+- ✅ `simple-git` package installed (`pnpm install simple-git`)
+- ✅ Understanding of git worktree concepts
+
+**Files to create:**
+- `composables/useGitRepository.ts`
+- `composables/useGitRepository.test.ts`
+
+**What to build:**
+```typescript
+// KISS: Just the git validation essentials
+export interface GitRepoInfo {
+  isValidRepo: boolean
+  repoPath: string
+  currentBranch: string
+  availableBranches: string[]
+  isClean: boolean
+  hasRemote: boolean
+  errorMessage?: string
+}
+
+export function useGitRepository() {
+  const validateGitRepository = async (directoryPath: string): Promise<GitRepoInfo> => {
+    const git = simpleGit(directoryPath)
+    
+    // Check if valid git repo
+    const isRepo = await git.checkIsRepo()
+    if (!isRepo) return { isValidRepo: false, errorMessage: 'Not a git repository' }
+    
+    // Get essential info
+    const currentBranch = await git.revparse(['--abbrev-ref', 'HEAD'])
+    const branches = await git.branch(['-a'])
+    const status = await git.status()
+    
+    return {
+      isValidRepo: true,
+      repoPath: directoryPath,
+      currentBranch,
+      availableBranches: Object.keys(branches.branches),
+      isClean: status.files.length === 0,
+      hasRemote: (await git.getRemotes()).length > 0
+    }
+  }
+  
+  return { validateGitRepository }
+}
+```
+
+**Definition of Done:**
+- ✅ Validates git repositories correctly
+- ✅ Returns current branch and available branches
+- ✅ Detects clean vs dirty working directory state
+- ✅ Handles errors gracefully
+- ✅ Tests use memfs for file system mocking
+
+**Integration Checkpoint:**
+Ready for Step 8 when `validateGitRepository()` returns comprehensive git repository information.
+
+---
+
+#### **Step 8: Simple Worktree Creation** ⏱️ *~45 minutes*
+**Goal**: Create isolated git worktrees for terminal sessions
+
+**Prerequisites:**
+- ✅ Step 7 completed (git repository validation working)
+- ✅ Understanding of git worktree concepts
+- ✅ File system permissions for worktree creation
+
+**Files to create:**
+- `server/services/gitWorktree.ts`
+- `server/services/gitWorktree.test.ts`
+
+**What to build:**
+```typescript
+// KISS: Just the worktree management essentials
+export interface WorktreeInfo {
+  worktreePath: string
+  branchName: string
+  terminalId: string
+  basePath: string
+  createdAt: Date
+}
+
+export class GitWorktreeService {
+  private worktrees = new Map<string, WorktreeInfo>()
+
+  async createWorktree(options: CreateWorktreeOptions): Promise<WorktreeInfo> {
+    const git = simpleGit(options.basePath)
+    
+    // Generate worktree path
+    const worktreePath = join(dirname(options.basePath), 'worktrees', 
+      `${options.terminalId}-${options.branchName}`)
+    
+    // Create worktree with optional new branch
+    if (options.createBranch) {
+      await git.raw(['worktree', 'add', '-b', options.branchName, worktreePath])
+    } else {
+      await git.raw(['worktree', 'add', worktreePath, options.branchName])
+    }
+    
+    const info = { worktreePath, ...options, createdAt: new Date() }
+    this.worktrees.set(options.terminalId, info)
+    return info
+  }
+
+  async removeWorktree(terminalId: string): Promise<void> {
+    const info = this.worktrees.get(terminalId)
+    if (!info) return
+    
+    const git = simpleGit(info.basePath)
+    await git.raw(['worktree', 'remove', info.worktreePath, '--force'])
+    this.worktrees.delete(terminalId)
+  }
+}
+
+describe('GitWorktreeService', () => {
+  let service: GitWorktreeService
+
+  beforeEach(() => {
+    service = new GitWorktreeService()
+    vol.reset()
+    vi.clearAllMocks()
+  })
+
+  it('should create worktree for existing branch', async () => {
+    vol.fromJSON({
+      '/project/.git/config': '[core]\n\trepositoryformatversion = 0',
+      '/project/worktrees': null // Directory
+    })
+
+    const options = {
+      basePath: '/project',
+      branchName: 'feature/test',
+      terminalId: 'term123',
+      createBranch: false
+    }
+
+    const result = await service.createWorktree(options)
+
+    expect(result.terminalId).toBe('term123')
+    expect(result.branchName).toBe('feature/test')
+    expect(result.worktreePath).toContain('worktrees')
+    expect(mockGit.raw).toHaveBeenCalledWith(['worktree', 'add', expect.any(String), 'feature/test'])
+  })
+
+  it('should create worktree with new branch', async () => {
+    vol.fromJSON({
+      '/project/.git/config': '[core]\n\trepositoryformatversion = 0'
+    })
+
+    const options = {
+      basePath: '/project',
+      branchName: 'new-feature',
+      terminalId: 'term456',
+      createBranch: true
+    }
+
+    const result = await service.createWorktree(options)
+
+    expect(result.branchName).toBe('new-feature')
+    expect(mockGit.raw).toHaveBeenCalledWith(['worktree', 'add', '-b', 'new-feature', expect.any(String)])
+  })
+
+  it('should remove worktree correctly', async () => {
+    // Create worktree first
+    vol.fromJSON({
+      '/project/.git/config': '[core]\n\trepositoryformatversion = 0'
+    })
+
+    const worktree = await service.createWorktree({
+      basePath: '/project',
+      branchName: 'test',
+      terminalId: 'term789'
+    })
+
+    // Remove worktree
+    await service.removeWorktree('term789')
+
+    expect(mockGit.raw).toHaveBeenCalledWith(['worktree', 'remove', worktree.worktreePath, '--force'])
+    expect(service.getWorktree('term789')).toBeUndefined()
+  })
+
+  it('should cleanup orphaned worktrees', async () => {
+    vol.fromJSON({
+      '/project/.git/config': '[core]\n\trepositoryformatversion = 0'
+    })
+
+    // Create multiple worktrees
+    await service.createWorktree({
+      basePath: '/project',
+      branchName: 'active',
+      terminalId: 'active-terminal'
+    })
+
+    await service.createWorktree({
+      basePath: '/project',
+      branchName: 'orphaned',
+      terminalId: 'orphaned-terminal'
+    })
+
+    // Cleanup with only one active terminal
+    await service.cleanupOrphanedWorktrees(new Set(['active-terminal']))
+
+    expect(service.getWorktree('active-terminal')).toBeDefined()
+    expect(service.getWorktree('orphaned-terminal')).toBeUndefined()
+  })
+})
+```
+
+**Definition of Done:**
+- ✅ Creates git worktrees in dedicated worktrees directory
+- ✅ Supports both existing and new branch creation
+- ✅ Tracks worktree-to-terminal mappings correctly
+- ✅ Removes worktrees safely with force flag
+- ✅ Handles directory creation and validation
+- ✅ Provides orphaned worktree cleanup functionality
+- ✅ Tests cover creation, removal, and cleanup scenarios
+- ✅ Error handling for invalid repositories and path conflicts
+
+**Integration Checkpoint:**
+Ready for Step 9 when `GitWorktreeService` can create/remove worktrees and track terminal mappings.
+
+---
+
+#### **Step 9: Update Terminal Creation UI** ⏱️ *~45 minutes*
+**Goal**: Enhanced terminal creation modal with git repository integration
+
+**Files to create:**
+- `components/terminal/CreateTerminalModal.vue` - Enhanced modal with git integration
+- `composables/useSavedDirectories.ts` - Directory persistence management
+
+**Files to modify:**
+- `components/terminal/TerminalSidebar.vue` - Integrate modal
+
+**Core Implementation:**
+
+```typescript
+// composables/useSavedDirectories.ts
+export interface SavedDirectory {
+  id: string
+  name: string
+  path: string
+  isValid: boolean
+  defaultBranch?: string
+}
+
+export function useSavedDirectories() {
+  const getSavedDirectories = async (): Promise<SavedDirectory[]>
+  const addSavedDirectory = async (directory: Omit<SavedDirectory, 'id'>): Promise<void>
+  const removeSavedDirectory = async (directoryId: string): Promise<void>
+  
+  return { getSavedDirectories, addSavedDirectory, removeSavedDirectory }
+}
+```
+
+```vue
+<!-- components/terminal/CreateTerminalModal.vue -->
+<template>
+  <AppModal v-model="isOpen">
+    <form @submit.prevent="createTerminal">
+      <!-- Terminal Name Input -->
+      <AppInput v-model="form.name" label="Terminal Name" required />
+      
+      <!-- Repository Selection -->
+      <AppSelect 
+        v-model="selectedRepo" 
+        :options="savedDirectories"
+        label="Repository" 
+      />
+      
+      <!-- Manual Path Entry -->
+      <AppInput v-model="form.basePath" label="Repository Path" />
+      
+      <!-- Branch Selection (when repo is valid) -->
+      <AppSelect 
+        v-if="repoInfo?.isValidRepo"
+        v-model="form.branchName" 
+        :options="availableBranches"
+        label="Branch" 
+      />
+      
+      <!-- Actions -->
+      <AppButton type="submit" :disabled="!canCreate">Create Terminal</AppButton>
+      <AppButton variant="secondary" @click="closeModal">Cancel</AppButton>
+    </form>
+  </AppModal>
+</template>
+
+<script setup lang="ts">
+const { validateGitRepository } = useGitRepository()
+const { getSavedDirectories, addSavedDirectory } = useSavedDirectories()
+
+// Form state and validation
+const form = ref({ name: '', basePath: '', branchName: '' })
+const repoInfo = ref<GitRepoInfo | null>(null)
+
+// Terminal creation with git integration
+const createTerminal = async () => {
+  const terminalId = terminalStore.createTerminal({
+    name: form.value.name,
+    basePath: form.value.basePath,
+    branchName: form.value.branchName,
+    useGit: true
+  })
+  
+  emit('terminalCreated', terminalId)
+  closeModal()
+}
+</script>
+```
+
+**Definition of Done:**
+- ✅ Modal integrates git repository validation from Step 7
+- ✅ Saved directories persistence for quick repository selection  
+- ✅ Form validation prevents invalid terminal creation
+- ✅ Branch selection for git repositories
+- ✅ Worktree path preview integration
+- ✅ Backwards compatible with Phase 2A simple terminal creation
+
+**Integration Checkpoint:**
+Ready for Phase 2B when enhanced UI can prepare worktree creation parameters.
+
+---
+
+### **Phase 2B: WebSocket Integration**
+
+#### **Step 10: Basic WebSocket Connection per Terminal** ⏱️ *~45 minutes*
+**Goal**: Individual WebSocket connections for isolated terminal communication
+
+**Files to create:**
+- `composables/useMultiTerminalWebSocket.ts` - WebSocket management per terminal
+- `composables/useMultiTerminalWebSocket.test.ts` - Connection testing
+
+**Files to modify:**
+- `stores/terminalManager.ts` - Integrate WebSocket connections
+
+**Core Implementation:**
+
+```typescript
+// composables/useMultiTerminalWebSocket.ts
+export interface TerminalConnection {
+  terminalId: string
+  websocket: WebSocket | null
+  status: 'connecting' | 'connected' | 'disconnected' | 'error'
+  lastActivity: Date
+}
+
+export interface MultiTerminalWebSocketOptions {
+  terminalId: string
+  workingDirectory?: string
+  onOutput?: (output: string) => void
+  onError?: (error: Error) => void
+  onStatusChange?: (status: TerminalConnection['status']) => void
+}
+
+export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions) {
+  const connection = ref<TerminalConnection>({
+    terminalId: options.terminalId,
+    websocket: null,
+    status: 'disconnected',
+    lastActivity: new Date()
+  })
+
+  const connect = async (): Promise<void> => {
+    const wsUrl = new URL('/api/ws/terminal', window.location.origin)
+    wsUrl.protocol = wsUrl.protocol.replace('http', 'ws')
+    wsUrl.searchParams.set('terminalId', options.terminalId)
+    
+    if (options.workingDirectory) {
+      wsUrl.searchParams.set('cwd', options.workingDirectory)
+    }
+
+    const ws = new WebSocket(wsUrl.toString())
+    connection.value.websocket = ws
+    
+    // Setup event handlers for connection lifecycle
+    ws.onopen = () => handleConnectionOpen()
+    ws.onmessage = (event) => handleMessage(event.data)
+    ws.onerror = (event) => handleError(event)
+    ws.onclose = (event) => handleClose(event)
+  }
+
+  const sendInput = (input: string): boolean => {
+    return connection.value.websocket?.send(input) || false
+  }
+
+  const disconnect = (): void => {
+    connection.value.websocket?.close(1000, 'Client disconnect')
+  }
+
+  return { connection, connect, sendInput, disconnect }
+}
+
+export function useMultiTerminalManager() {
+  const connections = ref(new Map<string, any>())
+  
+  const createConnection = (options: MultiTerminalWebSocketOptions) => {
+    const connection = useMultiTerminalWebSocket(options)
+    connections.value.set(options.terminalId, connection)
+    return connection
+  }
+
+  const removeConnection = (terminalId: string): void => {
+    connections.value.get(terminalId)?.disconnect()
+    connections.value.delete(terminalId)
+  }
+
+  return { connections, createConnection, removeConnection }
+}
+```
+
+```typescript
+// Enhanced stores/terminalManager.ts integration
+export const useTerminalManagerStore = defineStore('terminalManager', () => {
+  // ... existing Phase 1 code
+
+  const webSocketManager = useMultiTerminalManager()
+  const terminalOutputs = ref(new Map<string, string[]>())
+
+  const createTerminalWithGit = async (options: {
+    name: string
+    basePath?: string
+    branchName?: string
+  }): Promise<string> => {
+    const terminalId = generateTerminalId()
+    
+    // Create git worktree if git parameters provided
+    let worktreePath: string | undefined
+    if (options.basePath && options.branchName) {
+      worktreePath = await gitWorktreeService.createWorktree({
+        basePath: options.basePath,
+        branchName: options.branchName,
+        terminalId
+      })
+    }
+
+    // Create terminal with WebSocket connection
+    const terminal = {
+      id: terminalId,
+      name: options.name,
+      status: 'connecting',
+      worktreePath,
+      branchName: options.branchName
+    }
+
+    terminals.value.set(terminalId, terminal)
+
+    // Create and connect WebSocket
+    const connection = webSocketManager.createConnection({
+      terminalId,
+      workingDirectory: worktreePath || options.basePath,
+      onOutput: (output) => handleTerminalOutput(terminalId, output),
+      onStatusChange: (status) => updateTerminalStatus(terminalId, status)
+    })
+
+    await connection.connect()
+    
+    return terminalId
+  }
+
+  const sendInput = (terminalId: string, input: string): boolean => {
+    return webSocketManager.connections.value.get(terminalId)?.sendInput(input) || false
+  }
+
+  return {
+    // ... existing exports
+    createTerminalWithGit,
+    sendInput,
+    webSocketManager
+  }
+})
+```
+
+**Definition of Done:**
+- ✅ Individual WebSocket connections per terminal with unique URLs
+- ✅ Connection lifecycle management (connect, disconnect, error handling)
+- ✅ Terminal input/output streaming through WebSocket
+- ✅ Integration with git worktree working directories from Step 8
+- ✅ Multi-terminal manager coordinates multiple connections
+- ✅ Enhanced terminal store manages WebSocket integration
+- ✅ Tests cover connection scenarios and multi-terminal coordination
+
+**Integration Checkpoint:**
+Ready for Step 11 when terminals have working WebSocket data streams.
+
+---
+
+#### **Step 11: Replace Placeholder with Real Terminal** ⏱️ *~45 minutes*
+**Goal**: Replace mock terminal with real xterm.js integration
+
+**Files to create:**
+- `components/terminal/XTerminalInstance.vue` - Real xterm.js terminal component
+- `components/terminal/XTerminalInstance.test.ts` - Terminal component testing
+
+**Files to modify:**
+- `components/terminal/TerminalDisplay.vue` - Use real terminal component
+
+**Core Implementation:**
+
+```vue
+<!-- components/terminal/XTerminalInstance.vue -->
+<template>
+  <div class="xterminal-instance">
+    <div class="terminal-header">
+      <div class="terminal-info">
+        <h4>{{ terminal.name }}</h4>
+        <div class="terminal-meta">
+          <span class="terminal-id">{{ terminal.id.slice(0, 8) }}</span>
+          <span class="connection-status" :class="`status-${terminal.connectionStatus}`">
+            {{ terminal.connectionStatus }}
+          </span>
+          <span v-if="terminal.branchName" class="branch-info">
+            📋 {{ terminal.branchName }}
+          </span>
+        </div>
+      </div>
+      
+      <div class="terminal-controls">
+        <AppButton icon="reconnect" @click="reconnect" :disabled="isConnecting" />
+        <AppButton icon="trash" variant="danger" @click="$emit('remove')" />
+      </div>
+    </div>
+
+    <div ref="terminalContainer" class="terminal-container" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { Terminal } from '@xterm/xterm'
+import { FitAddon } from '@xterm/addon-fit'
+import '@xterm/xterm/css/xterm.css'
+
+interface Props {
+  terminal: EnhancedTerminal
+}
+
+const props = defineProps<Props>()
+const terminalStore = useTerminalManagerStore()
+const terminalContainer = ref<HTMLElement>()
+
+let xterm: Terminal | null = null
+let fitAddon: FitAddon | null = null
+
+const initializeTerminal = async (): Promise<void> => {
+  if (!terminalContainer.value || xterm) return
+
+  // Create xterm instance with theme
+  xterm = new Terminal({
+    cursorBlink: true,
+    fontSize: 14,
+    fontFamily: '"Cascadia Code", "Fira Code", monospace',
+    theme: { background: '#1a1b26', foreground: '#c0caf5' }
+  })
+
+  // Add fit addon for responsive sizing
+  fitAddon = new FitAddon()
+  xterm.loadAddon(fitAddon)
+
+  // Open terminal and fit to container
+  xterm.open(terminalContainer.value)
+  await nextTick()
+  fitAddon.fit()
+
+  // Setup input/output handling
+  xterm.onData((data) => terminalStore.sendInput(props.terminal.id, data))
+  xterm.onResize(({ cols, rows }) => {
+    const connection = terminalStore.webSocketManager.getConnection(props.terminal.id)
+    connection?.resize(cols, rows)
+  })
+
+  // Load existing output history
+  const outputHistory = terminalStore.getTerminalOutput(props.terminal.id)
+  outputHistory.forEach(output => xterm!.write(output))
+}
+
+const reconnect = async (): Promise<void> => {
+  const connection = terminalStore.webSocketManager.getConnection(props.terminal.id)
+  if (connection) {
+    connection.disconnect()
+    await connection.connect()
+  }
+}
+
+// Watch for new output and write to xterm
+watch(
+  () => terminalStore.getTerminalOutput(props.terminal.id),
+  (newOutput, oldOutput) => {
+    if (!xterm || !newOutput) return
+    const newLines = newOutput.slice(oldOutput?.length || 0)
+    newLines.forEach(line => xterm!.write(line))
+  },
+  { deep: true }
+)
+
+// Lifecycle management
+onMounted(() => initializeTerminal())
+onUnmounted(() => {
+  if (xterm) {
+    xterm.dispose()
+    xterm = null
+  }
+})
+</script>
+```
+
+```vue
+<!-- Updated components/terminal/TerminalDisplay.vue -->
+<template>
+  <div class="terminal-display">
+    <div v-if="!activeTerminal" class="no-terminal">
+      <div class="no-terminal-content">
+        <h3>No Terminal Selected</h3>
+        <p>Create a new terminal or select one from the sidebar</p>
+        <AppButton icon="plus" @click="$emit('create-terminal')">
+          Create Terminal
+        </AppButton>
+      </div>
+    </div>
+    
+    <XTerminalInstance
+      v-else
+      :terminal="activeTerminal"
+      @remove="handleRemoveTerminal"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import XTerminalInstance from './XTerminalInstance.vue'
+
+const terminalStore = useTerminalManagerStore()
+
+const activeTerminal = computed(() => {
+  const activeId = terminalStore.activeTerminalId
+  return activeId ? terminalStore.terminals.get(activeId) : null
+})
+
+const handleRemoveTerminal = async (): Promise<void> => {
+  if (!activeTerminal.value) return
+  await terminalStore.removeTerminalWithCleanup(activeTerminal.value.id)
+}
+</script>
+```
+
+**Definition of Done:**
+- ✅ Real xterm.js terminal replaces mock placeholder UI
+- ✅ Terminal connects to WebSocket streams from Step 10 for I/O
+- ✅ Input handling streams user keystrokes to WebSocket
+- ✅ Output from WebSocket displays correctly in terminal
+- ✅ Terminal responsive sizing and container fitting
+- ✅ Connection status indicators and control buttons functional
+- ✅ Git branch information displayed in terminal header
+- ✅ Proper terminal cleanup and disposal on component removal
+- ✅ Tests cover terminal initialization, I/O streaming, and lifecycle
+
+**Integration Checkpoint:**
+Ready for Phase 2C when real terminals handle WebSocket I/O correctly.
+
+---
+
+### **Phase 2C: Persistence & Cleanup**
+
+#### **Steps 12-13: Terminal Persistence & Startup Cleanup** ⏱️ *~60 minutes*
+**Goal**: Persist terminal state across app restarts and clean up stale resources
+
+**Files to create:**
+- `composables/useTerminalPersistence.ts` - Terminal state persistence
+- `composables/useStartupCleanup.ts` - Startup cleanup logic
+- `plugins/startup-cleanup.client.ts` - Cleanup plugin
+
+**Files to modify:**
+- `stores/terminalManager.ts` - Integrate persistence
+- `app.vue` - Show startup status
+
+**Core Implementation:**
+
+```typescript
+// composables/useTerminalPersistence.ts
+export interface PersistedTerminalState {
+  terminalId: string
+  name: string
+  lastActivity: Date
+  status: 'connected' | 'disconnected' | 'error' | 'connecting'
+  worktreePath?: string
+  branchName?: string
+  basePath?: string
+  createdAt: Date
+}
+
+export function useTerminalPersistence() {
+  const settingsService = useSettingsService()
+  
+  const saveTerminalState = async (terminalId: string, state: Partial<PersistedTerminalState>): Promise<void> => {
+    const existingStates = await getAllTerminalStates()
+    existingStates.set(terminalId, { ...state, terminalId } as PersistedTerminalState)
+    
+    await settingsService.saveSettings('terminal-states', {
+      terminals: Object.fromEntries(existingStates),
+      lastUpdate: new Date()
+    })
+  }
+  
+  const getAllTerminalStates = async (): Promise<Map<string, PersistedTerminalState>> => {
+    const saved = await settingsService.loadSettings('terminal-states')
+    const states = new Map<string, PersistedTerminalState>()
+    
+    if (saved?.terminals) {
+      for (const [terminalId, state] of Object.entries(saved.terminals)) {
+        states.set(terminalId, state as PersistedTerminalState)
+      }
+    }
+    
+    return states
+  }
+
+  const removeTerminalState = async (terminalId: string): Promise<void> => {
+    const states = await getAllTerminalStates()
+    states.delete(terminalId)
+    
+    await settingsService.saveSettings('terminal-states', {
+      terminals: Object.fromEntries(states),
+      lastUpdate: new Date()
+    })
+  }
+
+  return { saveTerminalState, getAllTerminalStates, removeTerminalState }
+}
+```
+
+```typescript
+// composables/useStartupCleanup.ts
+export function useStartupCleanup() {
+  const terminalStore = useTerminalManagerStore()
+  
+  const performSafeStartupCleanup = async (): Promise<{
+    cleanedStates: number
+    cleanedWorktrees: number
+    errors: string[]
+  }> => {
+    const report = { cleanedStates: 0, cleanedWorktrees: 0, errors: [] }
+
+    try {
+      // Clean up stale persistent states (7+ days old)
+      const persistedStates = await terminalStore.persistence.getAllTerminalStates()
+      const now = new Date()
+      
+      for (const [terminalId, state] of persistedStates) {
+        const daysSinceActivity = (now.getTime() - state.lastActivity.getTime()) / (1000 * 60 * 60 * 24)
+        
+        if (daysSinceActivity > 7 && state.status === 'disconnected') {
+          await terminalStore.persistence.removeTerminalState(terminalId)
+          report.cleanedStates++
+        }
+      }
+
+      // Clean up orphaned worktrees
+      const activeTerminalIds = new Set(Array.from(terminalStore.terminals.value.keys()))
+      await gitWorktreeService.cleanupOrphanedWorktrees(activeTerminalIds)
+      
+    } catch (error) {
+      report.errors.push(error instanceof Error ? error.message : 'Unknown error')
+    }
+
+    return report
+  }
+
+  return { performSafeStartupCleanup }
+}
+```
+
+```typescript
+// Enhanced stores/terminalManager.ts with persistence
+export const useTerminalManagerStore = defineStore('terminalManager', () => {
+  // ... existing code from Steps 7-11
+
+  const persistence = useTerminalPersistence()
+
+  const createTerminalWithPersistence = async (options: {
+    name: string
+    basePath?: string
+    branchName?: string
+  }): Promise<string> => {
+    const terminalId = await createTerminalWithGit(options)
+    
+    // Save terminal state for persistence
+    await persistence.saveTerminalState(terminalId, {
+      terminalId,
+      name: options.name,
+      status: 'connecting',
+      worktreePath: terminals.value.get(terminalId)?.worktreePath,
+      branchName: options.branchName,
+      basePath: options.basePath,
+      createdAt: new Date(),
+      lastActivity: new Date()
+    })
+
+    return terminalId
+  }
+
+  const removeTerminalWithPersistence = async (terminalId: string): Promise<void> => {
+    await removeTerminalWithCleanup(terminalId)
+    await persistence.removeTerminalState(terminalId)
+  }
+
+  return {
+    // ... existing exports
+    createTerminal: createTerminalWithPersistence,
+    removeTerminal: removeTerminalWithPersistence,
+    persistence
+  }
+})
+```
+
+```typescript
+// plugins/startup-cleanup.client.ts
+export default defineNuxtPlugin(async () => {
+  const { performSafeStartupCleanup } = useStartupCleanup()
+  
+  if (process.client) {
+    try {
+      const report = await performSafeStartupCleanup()
+      
+      if (report.cleanedStates > 0 || report.cleanedWorktrees > 0) {
+        console.log('🧹 Startup cleanup:', report)
+      }
+    } catch (error) {
+      console.error('❌ Startup cleanup failed:', error)
+    }
+  }
+})
+```
+
+**Definition of Done:**
+- ✅ Terminal state persisted across app restarts using settings service
+- ✅ Startup cleanup removes stale states (7+ days old, disconnected)
+- ✅ Orphaned git worktrees cleaned up automatically
+- ✅ Persistence integrated with terminal store without breaking changes
+- ✅ Cleanup failures don't block app startup
+- ✅ Simple startup UI shows initialization progress
+
+**Integration Checkpoint:**
+Ready for Phase 3 when terminals persist across restarts and startup cleanup works.
+
+---
+
+## 🏁 **Phase 2 Complete Checkpoint**
+
+After completing Steps 7-13, you should have:
+- ✅ **Git repository validation and worktree creation** (Steps 7-8)
+- ✅ **Enhanced terminal creation with repository selection** (Step 9)
+- ✅ **Individual WebSocket connections per terminal** (Step 10)
+- ✅ **Real xterm.js terminals with WebSocket integration** (Step 11)
+- ✅ **Terminal state persistence across app restarts** (Step 12)
+- ✅ **Safe startup cleanup of stale resources** (Step 13)
+
+**Time estimate**: ~5.5 hours of focused work (7 steps)
+
+**Test the complete flow:**
+1. Open app → Startup cleanup runs, removes old sessions
+2. Create terminal with git repo → Validates repo, creates worktree
+3. Use terminal → Real xterm.js with WebSocket, commands work
+4. Close/restart app → Terminal state persisted, can be restored
+5. Multiple terminals → Each has own WebSocket, git worktree
+6. Remove terminal → WebSocket closed, worktree cleaned up, state removed
 
 ---
 
 ## 🎯 **KISS/YAGNI Principles Applied**
 
 ### **What we're NOT building yet:**
-- ❌ Complex terminal previews
-- ❌ Advanced UI animations  
-- ❌ API call monitoring
-- ❌ Terminal output parsing
 - ❌ Settings management UI
 - ❌ Advanced cleanup strategies
 - ❌ Performance optimizations

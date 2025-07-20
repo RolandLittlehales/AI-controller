@@ -9,17 +9,18 @@ This document establishes comprehensive code quality standards for the AI-Contro
 1. [RFC 2119 Keywords](#rfc-2119-keywords)
 2. [Quality Tools and Configuration](#quality-tools-and-configuration)
 3. [Code Style and Formatting](#code-style-and-formatting)
-4. [TypeScript Standards](#typescript-standards)
-5. [Testing Standards](#testing-standards)
-6. [Code Review Standards](#code-review-standards)
-7. [Performance Requirements](#performance-requirements)
-8. [Security Standards](#security-standards)
-9. [Code Complexity and Maintainability](#code-complexity-and-maintainability)
-10. [Pre-commit Hooks and Automation](#pre-commit-hooks-and-automation)
-11. [Continuous Integration Quality Gates](#continuous-integration-quality-gates)
-12. [Refactoring and Technical Debt](#refactoring-and-technical-debt)
-13. [Documentation Standards](#documentation-standards)
-14. [Compliance and Enforcement](#compliance-and-enforcement)
+4. [Deprecated Function Prevention](#deprecated-function-prevention)
+5. [TypeScript Standards](#typescript-standards)
+6. [Testing Standards](#testing-standards)
+7. [Code Review Standards](#code-review-standards)
+8. [Performance Requirements](#performance-requirements)
+9. [Security Standards](#security-standards)
+10. [Code Complexity and Maintainability](#code-complexity-and-maintainability)
+11. [Pre-commit Hooks and Automation](#pre-commit-hooks-and-automation)
+12. [Continuous Integration Quality Gates](#continuous-integration-quality-gates)
+13. [Refactoring and Technical Debt](#refactoring-and-technical-debt)
+14. [Documentation Standards](#documentation-standards)
+15. [Compliance and Enforcement](#compliance-and-enforcement)
 
 ## RFC 2119 Keywords
 
@@ -80,6 +81,90 @@ Imports MUST be organized in the following order:
 4. Relative imports
 
 Each group MUST be separated by a blank line.
+
+### Deprecated Function Prevention
+
+#### Modern JavaScript Standards
+
+Code MUST NOT use deprecated JavaScript functions and APIs. All deprecated functions MUST be replaced with modern alternatives:
+
+**Deprecated String Methods:**
+```typescript
+// ❌ PROHIBITED - substr() is deprecated
+const id = Math.random().toString(36).substr(2, 6);
+
+// ✅ REQUIRED - Use substring() with consistent length
+const randomPart = Math.random().toString(36).substring(2, 8).padEnd(6, "0");
+const id = `prefix_${Date.now()}_${randomPart}`;
+```
+
+**Deprecated Encoding/Decoding:**
+```typescript
+// ❌ PROHIBITED - escape() and unescape() are deprecated
+const encoded = escape(userInput);
+const decoded = unescape(encodedData);
+
+// ✅ REQUIRED - Use modern encoding methods
+const encoded = encodeURIComponent(userInput);
+const decoded = decodeURIComponent(encodedData);
+```
+
+**Deprecated HTML Methods:**
+```typescript
+// ❌ PROHIBITED - HTML string methods are deprecated
+const coloredText = text.fontcolor('red');
+const bigText = text.big();
+
+// ✅ REQUIRED - Use CSS and DOM methods
+element.style.color = 'red';
+element.style.fontSize = 'larger';
+```
+
+**Deprecated Date Methods:**
+```typescript
+// ❌ PROHIBITED - getYear() returns 2-digit year
+const year = new Date().getYear();
+
+// ✅ REQUIRED - Use getFullYear() for 4-digit year
+const year = new Date().getFullYear();
+```
+
+#### Detection and Prevention
+
+**ESLint Configuration:**
+- ESLint rules MUST be configured to detect deprecated function usage
+- Build process MUST fail if deprecated functions are detected
+- Pre-commit hooks SHOULD check for deprecated patterns
+
+**Code Review Requirements:**
+- All code reviews MUST check for deprecated function usage
+- Pull requests MUST include verification of modern alternatives
+- IDEs SHOULD display warnings for deprecated functions
+
+**Documentation References:**
+- Developers MUST check MDN documentation for deprecation status
+- Unknown APIs MUST be verified against current web standards
+- Legacy code patterns MUST be flagged for modernization
+
+#### Common Modernization Patterns
+
+**String Manipulation:**
+- `substr()` → `substring()` or `slice()`
+- String concatenation → Template literals
+- `indexOf()` checks → `includes()`, `startsWith()`, `endsWith()`
+
+**Variable Declarations:**
+- `var` → `const` or `let`
+- Function declarations in blocks → Proper scoping
+
+**Asynchronous Patterns:**
+- Callback-based APIs → Promise-based or async/await
+- `setTimeout` for delays → Proper async patterns
+
+**DOM Manipulation:**
+- `document.write()` → Modern DOM methods
+- `innerHTML` for text content → `textContent`
+- Direct style manipulation → CSS classes
 
 ## TypeScript Standards
 
