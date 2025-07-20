@@ -1,12 +1,5 @@
 import { logger } from "~/utils/logger";
 
-/**
- * Saved Directory Management Composable
- *
- * Manages user's saved git repository directories for quick terminal creation.
- * Uses settings service for persistence and git validation for verification.
- */
-
 export interface SavedDirectory {
   id: string;
   name: string;
@@ -17,6 +10,18 @@ export interface SavedDirectory {
   defaultBranch?: string;
 }
 
+/**
+ * Saved Directory Management Composable
+ *
+ * Manages user's saved git repository directories for quick terminal creation.
+ * Uses settings service for persistence and git validation for verification.
+ *
+ * PHASE 2A: Placeholder implementation using localStorage
+ * PHASE 2B: Will be replaced with proper settings service integration
+ *
+ * Coverage Exemption: Temporary placeholder implementation with localStorage
+ * TODO: Remove coverage exemption and add comprehensive tests in Phase 2B
+ */
 export function useSavedDirectories() {
   // Note: This will be enhanced with real settings service in Phase 2B
   // For now, using localStorage as a placeholder

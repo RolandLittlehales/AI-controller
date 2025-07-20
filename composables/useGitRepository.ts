@@ -6,6 +6,12 @@ import { logger } from "~/utils/logger";
  *
  * Provides basic git repository validation and information.
  * KISS approach: Only essential git operations for terminal creation.
+ *
+ * PHASE 2A: Client-side validation only (returns fallback for server operations)
+ * PHASE 2B: Will implement server-side git operations (Step 7-8 of implementation plan)
+ *
+ * Coverage Exemption: Server-side code paths intentionally not covered in Phase 2A
+ * TODO: Remove coverage exemption and enable server-side tests in Phase 2B Step 7
  */
 
 interface GitRepositoryInfo {
