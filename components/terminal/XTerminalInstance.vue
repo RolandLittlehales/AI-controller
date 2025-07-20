@@ -116,8 +116,8 @@ const initializeXTermLibraries = async () => {
       import("@xterm/addon-fit"),
     ]);
 
-    Terminal = terminalModule.Terminal;
-    FitAddon = fitAddonModule.FitAddon;
+    ({ Terminal } = terminalModule);
+    ({ FitAddon } = fitAddonModule);
 
     // Import CSS dynamically
     await import("@xterm/xterm/css/xterm.css");
@@ -181,6 +181,9 @@ const initializeTerminal = async (): Promise<void> => {
     xterm.open(terminalContainer.value);
     await nextTick();
     fitAddon.fit();
+
+    // Focus the terminal for immediate input handling
+    xterm.focus();
 
     // Setup input handling - send data to WebSocket
     xterm.onData((data: string) => {
@@ -262,26 +265,6 @@ const formatWorkingDirectory = (path: string): string => {
 };
 
 /**
- * Watch for new terminal output and write to xterm
- */
-watch(
-  () => terminalStore.getTerminalOutput(props.terminal.id),
-  (newOutput, oldOutput) => {
-    if (!xterm || !newOutput) return;
-
-    const oldLength = oldOutput?.length || 0;
-    const newLines = newOutput.slice(oldLength);
-
-    newLines.forEach(line => {
-      if (xterm) {
-        xterm.write(line);
-      }
-    });
-  },
-  { deep: true },
-);
-
-/**
  * Watch for connection status changes
  */
 watch(
@@ -293,6 +276,31 @@ watch(
     connectionStatus.value = newStatus;
   },
   { immediate: true },
+);
+
+/**
+ * Watch for terminal output changes and write to xterm
+ */
+watch(
+  () => {
+    // Watch the output array length to trigger on new outputs
+    const outputs = terminalStore.getTerminalOutput(props.terminal.id);
+    return outputs.length;
+  },
+  (newLength, oldLength) => {
+    if (!xterm || newLength <= (oldLength || 0)) return;
+
+    // Get all outputs and write only the new ones
+    const allOutputs = terminalStore.getTerminalOutput(props.terminal.id);
+    const newOutputs = allOutputs.slice(oldLength || 0);
+
+    newOutputs.forEach(output => {
+      if (xterm) {
+        xterm.write(output);
+      }
+    });
+  },
+  { immediate: false },
 );
 
 /**

@@ -23,6 +23,7 @@
 
     <XTerminalInstance
       v-else
+      :key="activeTerminal.id"
       :terminal="activeTerminal"
       @remove="handleRemoveTerminal"
     />

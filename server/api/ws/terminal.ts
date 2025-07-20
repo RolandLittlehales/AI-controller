@@ -17,7 +17,7 @@ export default defineWebSocketHandler({
   async open(peer: WebSocketPeer) {
     // For now, we'll store the peer temporarily and get the terminal ID from the first message
     const tempId = "temp-" + Date.now();
-    
+
     // Store temporary peer info
     terminalPeers.set(tempId, {
       peer,
@@ -177,7 +177,7 @@ async function handleTerminalCreate(peerInfo: PeerInfo, data: WebSocketMessage) 
 }
 
 async function handleTerminalInput(peerInfo: PeerInfo, data: TerminalMessage) {
-  const input = data.data.input;
+  const { input } = data.data;
 
   if (!input) {
     peerInfo.peer.send(JSON.stringify({

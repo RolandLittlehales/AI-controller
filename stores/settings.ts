@@ -169,7 +169,7 @@ export const useSettingsStore = defineStore("settings", {
 
     async removeActiveTerminal(terminalId: string) {
       const activeTerminals = this.session.activeTerminals.filter(id => id !== terminalId);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
       const { [terminalId]: _removed, ...workingDirectories } = this.session.workingDirectories;
 
       await this.updateSessionData({

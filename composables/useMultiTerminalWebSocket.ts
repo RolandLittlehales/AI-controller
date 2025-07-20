@@ -76,9 +76,9 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
       timestamp: new Date(),
     };
 
-    logger.info("Sending terminal-create message", { 
-      terminalId: options.terminalId, 
-      message: createMessage 
+    logger.info("Sending terminal-create message", {
+      terminalId: options.terminalId,
+      message: createMessage,
     });
 
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
@@ -376,6 +376,7 @@ export function useMultiTerminalManager() {
     const connection = connections.value[terminalId];
     if (connection) {
       connection.disconnect();
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete connections.value[terminalId];
       logger.info("Removed terminal connection", { terminalId });
     }

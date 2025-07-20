@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { useMultiTerminalWebSocket, useMultiTerminalManager, type MultiTerminalWebSocketOptions } from "./useMultiTerminalWebSocket";
+import { useMultiTerminalWebSocket, useMultiTerminalManager  } from "./useMultiTerminalWebSocket";
+import type { MultiTerminalWebSocketOptions } from "./useMultiTerminalWebSocket";
 
 // Mock WebSocket
 class MockWebSocket {
@@ -28,10 +29,10 @@ class MockWebSocket {
 
   close(code?: number, reason?: string) {
     this.readyState = MockWebSocket.CLOSED;
-    this.onclose?.(new CloseEvent("close", { 
-      code: code || 1000, 
-      reason: reason || "", 
-      wasClean: true 
+    this.onclose?.(new CloseEvent("close", {
+      code: code || 1000,
+      reason: reason || "",
+      wasClean: true,
     }));
   }
 

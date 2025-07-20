@@ -159,6 +159,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
     const terminal = terminals.value[terminalId];
     if (!terminal) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete terminals.value[terminalId];
 
     // If removing active terminal, switch to next available
@@ -236,6 +237,9 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
       terminalOutputs.value[terminalId] = [];
     }
     terminalOutputs.value[terminalId].push(output);
+
+    // Trigger reactive update by creating new array reference
+    terminalOutputs.value[terminalId] = [...terminalOutputs.value[terminalId]];
   };
 
   /**
@@ -323,6 +327,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
     }
 
     // Clean up outputs
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete terminalOutputs.value[terminalId];
 
     // Remove from terminals map
