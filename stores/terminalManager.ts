@@ -2,6 +2,8 @@ import { defineStore } from "pinia";
 import { ref, readonly, computed } from "vue";
 import { useSystemResources } from "~/composables/useSystemResources";
 import { useGitRepository } from "~/composables/useGitRepository";
+import { useMultiTerminalManager } from "~/composables/useMultiTerminalWebSocket";
+import type { MultiTerminalManager } from "~/composables/useMultiTerminalWebSocket";
 
 export interface GitTerminalInfo {
   hasWorktree: boolean;
@@ -13,10 +15,11 @@ export interface GitTerminalInfo {
 export interface BasicTerminal {
   id: string;
   name: string;
-  status: "connecting" | "connected" | "disconnected";
+  status: "connecting" | "connected" | "disconnected" | "error";
   isActive: boolean;
   createdAt: Date;
   git?: GitTerminalInfo;
+  workingDirectory?: string;
 }
 
 export interface CreateTerminalOptions {
@@ -24,6 +27,7 @@ export interface CreateTerminalOptions {
   branchName?: string;
   baseBranch?: string;
   useGit?: boolean;
+  workingDirectory?: string;
 }
 
 /**
@@ -39,8 +43,10 @@ export interface CreateTerminalOptions {
 export const useTerminalManagerStore = defineStore("terminalManager", () => {
   const terminals = ref(new Map<string, BasicTerminal>());
   const activeTerminalId = ref<string | null>(null);
+  const terminalOutputs = ref(new Map<string, string[]>());
   const systemResources = useSystemResources();
   const gitRepository = useGitRepository();
+  const webSocketManager = useMultiTerminalManager();
 
   // Initialize system resources on store creation
   systemResources.detectSystemCapability();
@@ -107,6 +113,11 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
     } else if (terminalOptions.useGit) {
       // User requested git but no repository available
       throw new Error("Git integration requested but not in a git repository");
+    }
+
+    // Set working directory
+    if (terminalOptions.workingDirectory) {
+      terminal.workingDirectory = terminalOptions.workingDirectory;
     }
 
     terminals.value.set(terminalId, terminal);
@@ -211,6 +222,106 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
     return await gitRepository.getAvailableBranches();
   };
 
+  /**
+   * Create terminal with WebSocket connection
+   * @param options - Terminal creation options
+   * @returns Promise<string> Terminal ID
+   */
+  const createTerminalWithWebSocket = async (options: CreateTerminalOptions): Promise<string> => {
+    const terminalId = createTerminal(options);
+    const terminal = terminals.value.get(terminalId);
+    
+    if (!terminal) {
+      throw new Error("Failed to create terminal");
+    }
+
+    // Create WebSocket connection
+    const connection = webSocketManager.createConnection({
+      terminalId,
+      workingDirectory: terminal.workingDirectory || options.workingDirectory,
+      onOutput: (output) => handleTerminalOutput(terminalId, output),
+      onError: (error) => handleTerminalError(terminalId, error),
+      onStatusChange: (status) => updateTerminalStatus(terminalId, status),
+      onConnected: (serverTerminalId) => handleTerminalConnected(terminalId, serverTerminalId),
+      onDisconnected: () => handleTerminalDisconnected(terminalId)
+    });
+
+    // Start connection
+    await connection.connect();
+    
+    return terminalId;
+  };
+
+  /**
+   * Handle terminal output from WebSocket
+   */
+  const handleTerminalOutput = (terminalId: string, output: string): void => {
+    const outputs = terminalOutputs.value.get(terminalId) || [];
+    outputs.push(output);
+    terminalOutputs.value.set(terminalId, outputs);
+  };
+
+  /**
+   * Handle terminal error from WebSocket
+   */
+  const handleTerminalError = (terminalId: string, error: Error): void => {
+    console.error(`Terminal ${terminalId} error:`, error);
+    updateTerminalStatus(terminalId, "error");
+  };
+
+  /**
+   * Handle terminal connected event
+   */
+  const handleTerminalConnected = (terminalId: string, serverTerminalId: string): void => {
+    updateTerminalStatus(terminalId, "connected");
+    console.info(`Terminal ${terminalId} connected with server ID ${serverTerminalId}`);
+  };
+
+  /**
+   * Handle terminal disconnected event
+   */
+  const handleTerminalDisconnected = (terminalId: string): void => {
+    updateTerminalStatus(terminalId, "disconnected");
+  };
+
+  /**
+   * Send input to terminal
+   * @param terminalId - Terminal ID
+   * @param input - Input string
+   * @returns Success status
+   */
+  const sendInput = (terminalId: string, input: string): boolean => {
+    const connection = webSocketManager.getConnection(terminalId);
+    return connection?.sendInput(input) || false;
+  };
+
+  /**
+   * Get terminal output history
+   * @param terminalId - Terminal ID
+   * @returns Array of output strings
+   */
+  const getTerminalOutput = (terminalId: string): string[] => {
+    return terminalOutputs.value.get(terminalId) || [];
+  };
+
+  /**
+   * Remove terminal with proper cleanup
+   * @param terminalId - Terminal ID
+   */
+  const removeTerminalWithCleanup = async (terminalId: string): Promise<void> => {
+    const connection = webSocketManager.getConnection(terminalId);
+    if (connection) {
+      connection.disconnect();
+      webSocketManager.removeConnection(terminalId);
+    }
+    
+    // Clean up outputs
+    terminalOutputs.value.delete(terminalId);
+    
+    // Remove from terminals map
+    removeTerminal(terminalId);
+  };
+
   return {
     // Readonly state
     terminals: readonly(terminals),
@@ -238,5 +349,12 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
     // Git actions
     refreshGitRepository,
     getAvailableBranches,
+
+    // WebSocket actions
+    createTerminalWithWebSocket,
+    sendInput,
+    getTerminalOutput,
+    removeTerminalWithCleanup,
+    webSocketManager,
   };
 });

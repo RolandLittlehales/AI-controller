@@ -21,113 +21,11 @@
       </div>
     </div>
 
-    <div v-else class="active-terminal">
-      <div class="terminal-header">
-        <div class="terminal-info">
-          <h3 class="terminal-title">{{ activeTerminal.name }}</h3>
-          <div class="terminal-badges">
-            <span class="terminal-badge terminal-id">
-              ID: {{ activeTerminal.id.slice(0, 8) }}
-            </span>
-            <span
-              class="terminal-badge terminal-status"
-              :class="`status-${activeTerminal.status}`"
-            >
-              {{ formatStatus(activeTerminal.status) }}
-            </span>
-            <span class="terminal-badge terminal-created">
-              Created: {{ formatTime(activeTerminal.createdAt) }}
-            </span>
-          </div>
-        </div>
-
-        <div class="terminal-actions">
-          <AppButton
-            icon="i-heroicons-arrow-path"
-            size="sm"
-            variant="secondary"
-            :disabled="activeTerminal.status === 'connecting'"
-            title="Reconnect terminal"
-            @click="reconnectTerminal"
-          >
-            Reconnect
-          </AppButton>
-          <AppButton
-            icon="i-heroicons-x-mark"
-            size="sm"
-            variant="danger"
-            title="Close terminal"
-            @click="closeTerminal"
-          >
-            Close
-          </AppButton>
-        </div>
-      </div>
-
-      <div class="terminal-content">
-        <div class="terminal-placeholder">
-          <div class="placeholder-header">
-            <h4 class="placeholder-title">Terminal Content Placeholder</h4>
-            <p class="placeholder-subtitle">
-              This is where xterm.js will be integrated in the next phase
-            </p>
-          </div>
-
-          <div class="mock-terminal">
-            <div class="mock-toolbar">
-              <div class="mock-buttons">
-                <span class="mock-button mock-button--close"/>
-                <span class="mock-button mock-button--minimize"/>
-                <span class="mock-button mock-button--maximize"/>
-              </div>
-              <div class="mock-title">{{ activeTerminal.name }}</div>
-            </div>
-
-            <div class="mock-content">
-              <div class="mock-line">
-                <span class="prompt">user@ai-controller:~$</span>
-                <span class="command">echo "Hello from {{ activeTerminal.name }}"</span>
-              </div>
-              <div class="mock-line output">
-                Hello from {{ activeTerminal.name }}
-              </div>
-              <div class="mock-line">
-                <span class="prompt">user@ai-controller:~$</span>
-                <span class="command">pwd</span>
-              </div>
-              <div class="mock-line output">
-                /home/user/workspace
-              </div>
-              <div class="mock-line">
-                <span class="prompt">user@ai-controller:~$</span>
-                <span class="cursor">█</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="placeholder-info">
-            <div class="info-grid">
-              <div class="info-item">
-                <span class="info-label">Terminal ID:</span>
-                <span class="info-value">{{ activeTerminal.id }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Status:</span>
-                <span class="info-value">{{ activeTerminal.status }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Created:</span>
-                <span class="info-value">{{ formatFullTime(activeTerminal.createdAt) }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Active:</span>
-                <span class="info-value">{{ activeTerminal.isActive ? 'Yes' : 'No' }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <XTerminalInstance
+      v-else
+      :terminal="activeTerminal"
+      @remove="handleRemoveTerminal"
+    />
 
     <!-- Terminal Creation Modal -->
     <CreateTerminalModal
@@ -142,6 +40,7 @@ import { computed, ref } from "vue";
 import { useTerminalManagerStore } from "~/stores/terminalManager";
 import AppButton from "~/components/ui/AppButton.vue";
 import CreateTerminalModal from "./CreateTerminalModal.vue";
+import XTerminalInstance from "./XTerminalInstance.vue";
 
 /**
  * Terminal Display Component
@@ -174,72 +73,23 @@ const createFirstTerminal = (): void => {
  * Handle terminal creation from modal
  * @param terminalId - ID of the created terminal
  */
-const handleTerminalCreated = (terminalId: string): void => {
-  // Simulate brief connection delay for better UX
-  setTimeout(() => {
-    terminalStore.updateTerminalStatus(terminalId, "connected");
-  }, 500);
+const handleTerminalCreated = async (terminalId: string): Promise<void> => {
+  // Terminal creation now includes WebSocket connection setup
+  // No additional steps needed as the XTerminalInstance will handle connection
+  console.log('Terminal created:', terminalId);
 };
 
 /**
- * Reconnect the active terminal
+ * Handle terminal removal
  */
-const reconnectTerminal = (): void => {
+const handleRemoveTerminal = async (): Promise<void> => {
   if (!activeTerminal.value) return;
-
-  const terminalId = activeTerminal.value.id;
-  terminalStore.updateTerminalStatus(terminalId, "connecting");
-
-  // Simulate reconnection
-  setTimeout(() => {
-    terminalStore.updateTerminalStatus(terminalId, "connected");
-  }, 1000);
+  
+  // Use the enhanced cleanup method that handles WebSocket disconnection
+  await terminalStore.removeTerminalWithCleanup(activeTerminal.value.id);
 };
 
-/**
- * Close the active terminal
- */
-const closeTerminal = (): void => {
-  if (!activeTerminal.value) return;
-
-  terminalStore.removeTerminal(activeTerminal.value.id);
-};
-
-/**
- * Format terminal status for display
- * @param status - Terminal status
- * @returns Formatted status string
- */
-const formatStatus = (status: string): string => {
-  switch (status) {
-    case "connecting":
-      return "Connecting...";
-    case "connected":
-      return "Connected";
-    case "disconnected":
-      return "Disconnected";
-    default:
-      return status;
-  }
-};
-
-/**
- * Format timestamp for display
- * @param date - Date to format
- * @returns Formatted time string
- */
-const formatTime = (date: Date): string => {
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-};
-
-/**
- * Format full timestamp for detailed display
- * @param date - Date to format
- * @returns Formatted date/time string
- */
-const formatFullTime = (date: Date): string => {
-  return date.toLocaleString();
-};
+// Remove formatting functions as they're handled by XTerminalInstance
 </script>
 
 <style scoped>

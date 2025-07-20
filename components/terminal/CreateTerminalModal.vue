@@ -128,7 +128,7 @@ const closeModal = () => {
   resetForm();
 };
 
-// Phase 2A: Simple terminal creation - git integration removed for now
+// Phase 2B: WebSocket-enabled terminal creation with real connections
 
 const createTerminal = async () => {
   if (!canCreate.value) return;
@@ -137,8 +137,10 @@ const createTerminal = async () => {
   error.value = "";
 
   try {
-    // Phase 2A: Simple terminal creation
-    const terminalId = terminalStore.createTerminal(form.value.name.trim());
+    // Phase 2B: Create terminal with WebSocket connection
+    const terminalId = await terminalStore.createTerminalWithWebSocket({
+      name: form.value.name.trim()
+    });
 
     // Set the new terminal as active
     terminalStore.setActiveTerminal(terminalId);
@@ -146,7 +148,7 @@ const createTerminal = async () => {
     emit("terminalCreated", terminalId);
     closeModal();
 
-    logger.info("Terminal created successfully", { terminalId, name: form.value.name });
+    logger.info("Terminal with WebSocket created successfully", { terminalId, name: form.value.name });
   } catch (err) {
     error.value = err instanceof Error ? err.message : "Failed to create terminal";
     logger.error("Failed to create terminal", { error: err });
