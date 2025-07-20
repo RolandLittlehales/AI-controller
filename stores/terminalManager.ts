@@ -2,6 +2,10 @@ import { defineStore } from "pinia";
 import { ref, readonly, computed } from "vue";
 import { useSystemResources } from "~/composables/useSystemResources";
 import { useGitRepository } from "~/composables/useGitRepository";
+import { useMultiTerminalManager } from "~/composables/useMultiTerminalWebSocket";
+import { useTerminalSettings } from "~/composables/useSettings";
+import { logger } from "~/utils/logger";
+// import type { MultiTerminalManager } from "~/composables/useMultiTerminalWebSocket";
 
 export interface GitTerminalInfo {
   hasWorktree: boolean;
@@ -13,10 +17,11 @@ export interface GitTerminalInfo {
 export interface BasicTerminal {
   id: string;
   name: string;
-  status: "connecting" | "connected" | "disconnected";
+  status: "connecting" | "connected" | "disconnected" | "error";
   isActive: boolean;
   createdAt: Date;
   git?: GitTerminalInfo;
+  workingDirectory?: string;
 }
 
 export interface CreateTerminalOptions {
@@ -24,6 +29,7 @@ export interface CreateTerminalOptions {
   branchName?: string;
   baseBranch?: string;
   useGit?: boolean;
+  workingDirectory?: string;
 }
 
 /**
@@ -37,10 +43,13 @@ export interface CreateTerminalOptions {
  * - CRUD operations for terminals
  */
 export const useTerminalManagerStore = defineStore("terminalManager", () => {
-  const terminals = ref(new Map<string, BasicTerminal>());
+  const terminals = ref<Record<string, BasicTerminal>>({});
   const activeTerminalId = ref<string | null>(null);
+  const terminalOutputs = ref<Record<string, string[]>>({});
   const systemResources = useSystemResources();
   const gitRepository = useGitRepository();
+  const webSocketManager = useMultiTerminalManager();
+  const terminalSettings = useTerminalSettings();
 
   // Initialize system resources on store creation
   systemResources.detectSystemCapability();
@@ -49,7 +58,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * Check if we can create another terminal based on system limits
    */
   const canCreateTerminal = computed(() =>
-    terminals.value.size < systemResources.systemInfo.value.maxTerminals,
+    Object.keys(terminals.value).length < systemResources.systemInfo.value.maxTerminals,
   );
 
   /**
@@ -58,7 +67,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * @returns True if name is already in use
    */
   const isTerminalNameTaken = (name: string): boolean => {
-    return Array.from(terminals.value.values()).some(terminal =>
+    return Object.values(terminals.value).some(terminal =>
       terminal.name.toLowerCase().trim() === name.toLowerCase().trim(),
     );
   };
@@ -109,7 +118,12 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
       throw new Error("Git integration requested but not in a git repository");
     }
 
-    terminals.value.set(terminalId, terminal);
+    // Set working directory
+    if (terminalOptions.workingDirectory) {
+      terminal.workingDirectory = terminalOptions.workingDirectory;
+    }
+
+    terminals.value[terminalId] = terminal;
 
     return terminalId;
   };
@@ -120,19 +134,26 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    */
   const setActiveTerminal = (terminalId: string | null): void => {
     // Deactivate previous active terminal
-    if (activeTerminalId.value) {
-      const prev = terminals.value.get(activeTerminalId.value);
-      if (prev) {
-        prev.isActive = false;
+    if (activeTerminalId.value && terminals.value[activeTerminalId.value]) {
+      const prevTerminalId = activeTerminalId.value;
+      const prevTerminal = terminals.value[prevTerminalId];
+      if (prevTerminal) {
+        terminals.value[prevTerminalId] = {
+          ...prevTerminal,
+          isActive: false,
+        };
       }
     }
 
     // Activate new terminal
     activeTerminalId.value = terminalId;
-    if (terminalId) {
-      const terminal = terminals.value.get(terminalId);
+    if (terminalId && terminals.value[terminalId]) {
+      const terminal = terminals.value[terminalId];
       if (terminal) {
-        terminal.isActive = true;
+        terminals.value[terminalId] = {
+          ...terminal,
+          isActive: true,
+        };
       }
     }
   };
@@ -142,14 +163,15 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * @param terminalId - ID of terminal to remove
    */
   const removeTerminal = (terminalId: string): void => {
-    const terminal = terminals.value.get(terminalId);
+    const terminal = terminals.value[terminalId];
     if (!terminal) return;
 
-    terminals.value.delete(terminalId);
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete terminals.value[terminalId];
 
     // If removing active terminal, switch to next available
     if (activeTerminalId.value === terminalId) {
-      const remaining = Array.from(terminals.value.keys());
+      const remaining = Object.keys(terminals.value);
       setActiveTerminal(remaining[0] || null);
     }
   };
@@ -160,9 +182,12 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * @param status - New status
    */
   const updateTerminalStatus = (terminalId: string, status: BasicTerminal["status"]): void => {
-    const terminal = terminals.value.get(terminalId);
+    const terminal = terminals.value[terminalId];
     if (terminal) {
-      terminal.status = status;
+      terminals.value[terminalId] = {
+        ...terminal,
+        status,
+      };
     }
   };
 
@@ -172,28 +197,28 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * @returns Terminal or undefined
    */
   const getTerminal = (terminalId: string): BasicTerminal | undefined => {
-    return terminals.value.get(terminalId);
+    return terminals.value[terminalId];
   };
 
   /**
    * Get all terminals as array
    * @returns Array of all terminals
    */
-  const getAllTerminals = computed(() => Array.from(terminals.value.values()));
+  const getAllTerminals = computed(() => Object.values(terminals.value));
 
   /**
    * Get currently active terminal
    * @returns Active terminal or undefined
    */
   const getActiveTerminal = computed(() => {
-    return activeTerminalId.value ? terminals.value.get(activeTerminalId.value) : undefined;
+    return activeTerminalId.value ? terminals.value[activeTerminalId.value] : undefined;
   });
 
   /**
    * Get terminal count
    * @returns Number of terminals
    */
-  const terminalCount = computed(() => terminals.value.size);
+  const terminalCount = computed(() => Object.keys(terminals.value).length);
 
   /**
    * Refresh git repository information via API call
@@ -209,6 +234,127 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    */
   const getAvailableBranches = async (): Promise<string[]> => {
     return await gitRepository.getAvailableBranches();
+  };
+
+  /**
+   * Handle terminal output from WebSocket with history limit management
+   */
+  const handleTerminalOutput = (terminalId: string, output: string): void => {
+    if (!terminalOutputs.value[terminalId]) {
+      terminalOutputs.value[terminalId] = [];
+    }
+
+    // Add new output
+    terminalOutputs.value[terminalId].push(output);
+
+    // Apply history limit from terminal config (default 3000 lines)
+    const historyLimit = terminalSettings.getTerminalConfig().historyLimit || 3000;
+    const outputHistory = terminalOutputs.value[terminalId];
+
+    if (outputHistory.length > historyLimit) {
+      // Remove excess lines from the beginning to maintain limit
+      const excessLines = outputHistory.length - historyLimit;
+      terminalOutputs.value[terminalId] = outputHistory.slice(excessLines);
+
+      logger.debug("Terminal output history trimmed", {
+        terminalId,
+        removedLines: excessLines,
+        currentLines: terminalOutputs.value[terminalId].length,
+        limit: historyLimit,
+      });
+    }
+  };
+
+  /**
+   * Handle terminal error from WebSocket
+   */
+  const handleTerminalError = (terminalId: string, error: Error): void => {
+    logger.error(`Terminal ${terminalId} error:`, error);
+    updateTerminalStatus(terminalId, "error");
+  };
+
+  /**
+   * Handle terminal connected event
+   */
+  const handleTerminalConnected = (terminalId: string, serverTerminalId: string): void => {
+    updateTerminalStatus(terminalId, "connected");
+    logger.info(`Terminal ${terminalId} connected with server ID ${serverTerminalId}`);
+  };
+
+  /**
+   * Handle terminal disconnected event
+   */
+  const handleTerminalDisconnected = (terminalId: string): void => {
+    updateTerminalStatus(terminalId, "disconnected");
+  };
+
+  /**
+   * Create terminal with WebSocket connection
+   * @param options - Terminal creation options
+   * @returns Promise<string> Terminal ID
+   */
+  const createTerminalWithWebSocket = async (options: CreateTerminalOptions): Promise<string> => {
+    const terminalId = createTerminal(options);
+    const terminal = terminals.value[terminalId];
+
+    if (!terminal) {
+      throw new Error("Failed to create terminal");
+    }
+
+    // Create WebSocket connection
+    const connection = webSocketManager.createConnection({
+      terminalId,
+      workingDirectory: terminal.workingDirectory || options.workingDirectory || undefined,
+      onOutput: (output) => handleTerminalOutput(terminalId, output),
+      onError: (error) => handleTerminalError(terminalId, error),
+      onStatusChange: (status) => updateTerminalStatus(terminalId, status),
+      onConnected: (serverTerminalId) => handleTerminalConnected(terminalId, serverTerminalId),
+      onDisconnected: () => handleTerminalDisconnected(terminalId),
+    });
+
+    // Start connection
+    await connection.connect();
+
+    return terminalId;
+  };
+
+  /**
+   * Send input to terminal
+   * @param terminalId - Terminal ID
+   * @param input - Input string
+   * @returns Success status
+   */
+  const sendInput = (terminalId: string, input: string): boolean => {
+    const connection = webSocketManager.getConnection(terminalId);
+    return connection?.sendInput(input) || false;
+  };
+
+  /**
+   * Get terminal output history
+   * @param terminalId - Terminal ID
+   * @returns Array of output strings
+   */
+  const getTerminalOutput = (terminalId: string): string[] => {
+    return terminalOutputs.value[terminalId] || [];
+  };
+
+  /**
+   * Remove terminal with proper cleanup
+   * @param terminalId - Terminal ID
+   */
+  const removeTerminalWithCleanup = async (terminalId: string): Promise<void> => {
+    const connection = webSocketManager.getConnection(terminalId);
+    if (connection) {
+      connection.disconnect();
+      webSocketManager.removeConnection(terminalId);
+    }
+
+    // Clean up outputs
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete terminalOutputs.value[terminalId];
+
+    // Remove from terminals map
+    removeTerminal(terminalId);
   };
 
   return {
@@ -238,5 +384,12 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
     // Git actions
     refreshGitRepository,
     getAvailableBranches,
+
+    // WebSocket actions
+    createTerminalWithWebSocket,
+    sendInput,
+    getTerminalOutput,
+    removeTerminalWithCleanup,
+    webSocketManager,
   };
 });

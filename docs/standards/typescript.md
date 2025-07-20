@@ -219,6 +219,27 @@ interface ApiResponse<T = Record<string, unknown>> {
 const response: ApiResponse<Agent[]> = await fetchAgents();
 ```
 
+### Array Destructuring with Underscore Pattern
+
+When destructuring arrays where you need to skip elements, you MUST use underscore (`_`) as a placeholder for unused elements instead of leaving empty slots:
+
+```typescript
+// ❌ FORBIDDEN: Empty array destructuring slots
+const [, secondItem] = someArray;
+const [, , thirdItem] = someArray;
+
+// ✅ REQUIRED: Use underscore for unused elements
+const [_, secondItem] = someArray;
+const [_, _, thirdItem] = someArray;
+```
+
+**Rationale**: 
+- Improves code clarity by making skipped elements explicit
+- Prevents accidental omission of commas in destructuring
+- Aligns with the ESLint configuration that ignores underscore-prefixed variables
+
+**Note**: The ESLint configuration has been updated to ignore variables starting with `_` in all contexts (args, vars, caught errors, and destructured arrays), so using `_` for unused destructured elements will not trigger unused variable warnings.
+
 ## External Library Integration
 
 ### xterm.js Integration

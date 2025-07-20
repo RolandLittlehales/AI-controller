@@ -215,6 +215,7 @@ export interface TerminalConfig {
   fontSize: number
   fontFamily: string
   scrollback: number
+  historyLimit: number
   cursorBlink: boolean
   cursorStyle: "block" | "underline" | "bar"
   version: string

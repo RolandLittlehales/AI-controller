@@ -18,6 +18,7 @@ export const useSettingsStore = defineStore("settings", {
       fontSize: 14,
       fontFamily: "Monaco, Consolas, 'Liberation Mono', monospace",
       scrollback: 1000,
+      historyLimit: 3000,
       cursorBlink: true,
       cursorStyle: "block",
       version: "1.0.0",
@@ -169,7 +170,7 @@ export const useSettingsStore = defineStore("settings", {
 
     async removeActiveTerminal(terminalId: string) {
       const activeTerminals = this.session.activeTerminals.filter(id => id !== terminalId);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
       const { [terminalId]: _removed, ...workingDirectories } = this.session.workingDirectories;
 
       await this.updateSessionData({
