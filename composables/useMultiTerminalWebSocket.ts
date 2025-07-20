@@ -219,6 +219,9 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
       return;
     }
 
+    // Reset retry count on new connection attempt
+    connection.value.retryCount = 0;
+
     connection.value.status = "connecting";
     options.onStatusChange?.(connection.value.status);
 
@@ -327,6 +330,19 @@ export function useMultiTerminalWebSocket(options: MultiTerminalWebSocketOptions
    * Reconnect with exponential backoff
    */
   const reconnect = async (): Promise<void> => {
+    const MAX_RETRIES = 5;
+
+    if (connection.value.retryCount >= MAX_RETRIES) {
+      logger.error("Max reconnection attempts reached", {
+        terminalId: options.terminalId,
+        maxRetries: MAX_RETRIES,
+      });
+      connection.value.status = "error";
+      options.onStatusChange?.(connection.value.status);
+      options.onError?.(new Error("Max reconnection attempts reached"));
+      return;
+    }
+
     disconnect();
 
     connection.value.retryCount++;

@@ -181,26 +181,22 @@ describe("XTerminalInstance", () => {
   });
 
   it("should handle terminal without git information", () => {
-    const terminalWithoutGit: BasicTerminal = {
-      ...mockTerminal_,
-    };
-    delete (terminalWithoutGit as any).git;
+    const { git: _git, ...terminalWithoutGit } = mockTerminal_;
+    const terminal: BasicTerminal = terminalWithoutGit;
 
     const wrapper = mount(XTerminalInstance, {
-      props: { terminal: terminalWithoutGit },
+      props: { terminal },
     });
 
     expect(wrapper.find(".branch-info").exists()).toBe(false);
   });
 
   it("should handle terminal without working directory", () => {
-    const terminalWithoutWorkingDir: BasicTerminal = {
-      ...mockTerminal_,
-    };
-    delete (terminalWithoutWorkingDir as any).workingDirectory;
+    const { workingDirectory: _workingDirectory, ...terminalWithoutWorkingDir } = mockTerminal_;
+    const terminal: BasicTerminal = terminalWithoutWorkingDir;
 
     const wrapper = mount(XTerminalInstance, {
-      props: { terminal: terminalWithoutWorkingDir },
+      props: { terminal },
     });
 
     expect(wrapper.find(".working-dir").exists()).toBe(false);

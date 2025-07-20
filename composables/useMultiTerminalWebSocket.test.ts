@@ -203,7 +203,7 @@ describe("useMultiTerminalManager", () => {
       workingDirectory: "/path/2",
     });
 
-    expect(manager.connections.value.size).toBe(2);
+    expect(Object.keys(manager.connections.value).length).toBe(2);
     expect(manager.getConnection("terminal-1")).toBeDefined();
     expect(manager.getConnection("terminal-2")).toBeDefined();
   });
@@ -221,11 +221,11 @@ describe("useMultiTerminalManager", () => {
       workingDirectory: "/path/2",
     });
 
-    expect(manager.connections.value.size).toBe(2);
+    expect(Object.keys(manager.connections.value).length).toBe(2);
 
     manager.removeConnection("terminal-1");
 
-    expect(manager.connections.value.size).toBe(1);
+    expect(Object.keys(manager.connections.value).length).toBe(1);
     expect(manager.getConnection("terminal-1")).toBeUndefined();
     expect(manager.getConnection("terminal-2")).toBeDefined();
   });
@@ -250,7 +250,7 @@ describe("useMultiTerminalManager", () => {
 
     expect(disconnectSpy1).toHaveBeenCalled();
     expect(disconnectSpy2).toHaveBeenCalled();
-    expect(manager.connections.value.size).toBe(0);
+    expect(Object.keys(manager.connections.value).length).toBe(0);
   });
 
   it("should manage connection lifecycle", () => {
@@ -264,11 +264,11 @@ describe("useMultiTerminalManager", () => {
 
     // Test retrieval
     expect(manager.getConnection("test-terminal")).toBeDefined();
-    expect(manager.connections.value.has("test-terminal")).toBe(true);
+    expect("test-terminal" in manager.connections.value).toBe(true);
 
     // Test removal
     manager.removeConnection("test-terminal");
     expect(manager.getConnection("test-terminal")).toBeUndefined();
-    expect(manager.connections.value.has("test-terminal")).toBe(false);
+    expect("test-terminal" in manager.connections.value).toBe(false);
   });
 });

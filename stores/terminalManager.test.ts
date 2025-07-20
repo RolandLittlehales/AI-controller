@@ -43,9 +43,8 @@ describe("useTerminalManagerStore", () => {
   it("should initialize with empty state", () => {
     const store = useTerminalManagerStore();
 
-    expect(store.terminals.size).toBe(0);
-    expect(store.activeTerminalId).toBeNull();
     expect(store.terminalCount).toBe(0);
+    expect(store.activeTerminalId).toBeNull();
     expect(store.canCreateTerminal).toBe(true);
     expect(store.getAllTerminals).toEqual([]);
     expect(store.getActiveTerminal).toBeUndefined();
@@ -57,7 +56,6 @@ describe("useTerminalManagerStore", () => {
     const terminalId = store.createTerminal("Test Terminal");
 
     expect(terminalId).toMatch(/^term_\d+_[a-z0-9]{6}$/);
-    expect(store.terminals.size).toBe(1);
     expect(store.terminalCount).toBe(1);
 
     const terminal = store.getTerminal(terminalId);
@@ -77,7 +75,7 @@ describe("useTerminalManagerStore", () => {
       store.createTerminal(`Terminal ${i}`);
     }
 
-    expect(store.terminals.size).toBe(6);
+    expect(store.terminalCount).toBe(6);
     expect(store.canCreateTerminal).toBe(false);
 
     // Attempt to create one more should throw
@@ -85,7 +83,7 @@ describe("useTerminalManagerStore", () => {
       store.createTerminal("Terminal 7");
     }).toThrow("Terminal limit reached");
 
-    expect(store.terminals.size).toBe(6);
+    expect(store.terminalCount).toBe(6);
   });
 
   it("should handle active terminal switching correctly", () => {
@@ -136,11 +134,11 @@ describe("useTerminalManagerStore", () => {
     const terminal2Id = store.createTerminal("Terminal 2");
     const terminal3Id = store.createTerminal("Terminal 3");
 
-    expect(store.terminals.size).toBe(3);
+    expect(store.terminalCount).toBe(3);
 
     // Remove middle terminal
     store.removeTerminal(terminal2Id);
-    expect(store.terminals.size).toBe(2);
+    expect(store.terminalCount).toBe(2);
     expect(store.getTerminal(terminal2Id)).toBeUndefined();
     expect(store.getTerminal(terminal1Id)).toBeDefined();
     expect(store.getTerminal(terminal3Id)).toBeDefined();
@@ -161,7 +159,7 @@ describe("useTerminalManagerStore", () => {
     store.removeTerminal(terminal2Id);
 
     // Should automatically switch to first remaining terminal
-    expect(store.terminals.size).toBe(2);
+    expect(store.terminalCount).toBe(2);
     expect(store.activeTerminalId).toBe(terminal1Id);
     expect(store.getTerminal(terminal1Id)?.isActive).toBe(true);
   });
@@ -175,7 +173,7 @@ describe("useTerminalManagerStore", () => {
     // Remove the only terminal
     store.removeTerminal(terminalId);
 
-    expect(store.terminals.size).toBe(0);
+    expect(store.terminalCount).toBe(0);
     expect(store.activeTerminalId).toBeNull();
     expect(store.getActiveTerminal).toBeUndefined();
   });
@@ -184,11 +182,11 @@ describe("useTerminalManagerStore", () => {
     const store = useTerminalManagerStore();
 
     const terminalId = store.createTerminal("Test Terminal");
-    expect(store.terminals.size).toBe(1);
+    expect(store.terminalCount).toBe(1);
 
     // Try to remove non-existent terminal
     store.removeTerminal("non-existent-id");
-    expect(store.terminals.size).toBe(1);
+    expect(store.terminalCount).toBe(1);
     expect(store.getTerminal(terminalId)).toBeDefined();
   });
 
@@ -243,7 +241,7 @@ describe("useTerminalManagerStore", () => {
     }
 
     expect(ids.size).toBe(6);
-    expect(store.terminals.size).toBe(6); // Limited by maxTerminals
+    expect(store.terminalCount).toBe(6); // Limited by maxTerminals
   });
 
   it("should track terminal creation time", () => {
@@ -265,12 +263,12 @@ describe("useTerminalManagerStore", () => {
 
     // Create a terminal to test with
     const terminalId = store.createTerminal("Test Terminal");
-    const originalSize = store.terminals.size;
+    const originalCount = store.terminalCount;
 
-    // Test that terminals map provides readonly access - don't actually try to modify
-    expect(store.terminals.size).toBe(originalSize);
-    expect(typeof store.terminals.get).toBe("function");
-    expect(typeof store.terminals.has).toBe("function");
+    // Test that terminals state provides readonly access - don't actually try to modify
+    expect(store.terminalCount).toBe(originalCount);
+    expect(typeof store.getTerminal).toBe("function");
+    expect(Array.isArray(store.getAllTerminals)).toBe(true);
 
     // Test activeTerminalId is properly managed through store methods
     store.setActiveTerminal(terminalId);
@@ -278,7 +276,7 @@ describe("useTerminalManagerStore", () => {
 
     // Verify readonly behavior by checking that getters work as expected
     expect(store.getTerminal(terminalId)).toBeDefined();
-    expect(store.getAllTerminals).toHaveLength(originalSize);
+    expect(store.getAllTerminals).toHaveLength(originalCount);
   });
 
   describe("Git Integration", () => {

@@ -133,21 +133,26 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
   const setActiveTerminal = (terminalId: string | null): void => {
     // Deactivate previous active terminal
     if (activeTerminalId.value && terminals.value[activeTerminalId.value]) {
-      const prevTerminal = terminals.value[activeTerminalId.value];
-      terminals.value[activeTerminalId.value] = {
-        ...prevTerminal,
-        isActive: false,
-      };
+      const prevTerminalId = activeTerminalId.value;
+      const prevTerminal = terminals.value[prevTerminalId];
+      if (prevTerminal) {
+        terminals.value[prevTerminalId] = {
+          ...prevTerminal,
+          isActive: false,
+        };
+      }
     }
 
     // Activate new terminal
     activeTerminalId.value = terminalId;
     if (terminalId && terminals.value[terminalId]) {
       const terminal = terminals.value[terminalId];
-      terminals.value[terminalId] = {
-        ...terminal,
-        isActive: true,
-      };
+      if (terminal) {
+        terminals.value[terminalId] = {
+          ...terminal,
+          isActive: true,
+        };
+      }
     }
   };
 
@@ -175,8 +180,8 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * @param status - New status
    */
   const updateTerminalStatus = (terminalId: string, status: BasicTerminal["status"]): void => {
-    if (terminals.value[terminalId]) {
-      const terminal = terminals.value[terminalId];
+    const terminal = terminals.value[terminalId];
+    if (terminal) {
       terminals.value[terminalId] = {
         ...terminal,
         status,
@@ -237,9 +242,6 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
       terminalOutputs.value[terminalId] = [];
     }
     terminalOutputs.value[terminalId].push(output);
-
-    // Trigger reactive update by creating new array reference
-    terminalOutputs.value[terminalId] = [...terminalOutputs.value[terminalId]];
   };
 
   /**
