@@ -4,8 +4,10 @@ import type { PersistedTerminalState, TerminalStatesData } from "./useTerminalPe
 import type { ApiResponse } from "~/types";
 
 // Mock only external API calls - minimal mocking approach
-const mockFetch = vi.fn() as typeof globalThis.$fetch;
-globalThis.$fetch = mockFetch;
+// We mock $fetch to avoid actual HTTP calls during tests
+const mockFetch = vi.fn();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for test mocking
+globalThis.$fetch = mockFetch as any;
 
 describe("useStartupCleanup", () => {
   beforeEach(() => {
@@ -69,7 +71,7 @@ describe("useStartupCleanup", () => {
       mockFetch
         .mockResolvedValueOnce(terminalStatesResponse) // GET terminal states (initial load)
         .mockResolvedValueOnce(terminalStatesResponse) // GET terminal states (inside removeTerminalState)
-        .mockResolvedValueOnce({ success: true, data: { terminals: { "recent-terminal": terminalStatesResponse.data.terminals["recent-terminal"] }, lastUpdate: "", version: "1.0.0" } }) // PUT updated states (after removal)
+        .mockResolvedValueOnce({ success: true, data: { terminals: { "recent-terminal": terminalStatesResponse.data?.terminals["recent-terminal"] }, lastUpdate: "", version: "1.0.0" } }) // PUT updated states (after removal)
         .mockResolvedValueOnce(worktreeCleanupResponse); // POST worktree cleanup
 
       const { performSafeStartupCleanup } = useStartupCleanup();
@@ -229,7 +231,7 @@ describe("useStartupCleanup", () => {
   describe("reactive state", () => {
     it("should track cleanup running state", async () => {
       // Use a delayed promise to test running state
-      let resolvePromise: (value: unknown) => void;
+      let resolvePromise!: (value: unknown) => void;
       const delayedPromise = new Promise((resolve) => {
         resolvePromise = resolve;
       });

@@ -2,22 +2,12 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { useTerminalPersistence } from "./useTerminalPersistence";
 import type { PersistedTerminalState, TerminalStatesData } from "./useTerminalPersistence";
 import type { ApiResponse } from "~/types";
+import { mockLogger } from "~/test/setup";
 
-// Mock the global $fetch
-const mockFetch = vi.fn() as typeof globalThis.$fetch;
-globalThis.$fetch = mockFetch;
-
-// Mock logger with hoisted functions for proper access in tests
-const mockLogger = vi.hoisted(() => ({
-  debug: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-}));
-
-vi.mock("~/utils/logger", () => ({
-  logger: mockLogger,
-}));
+// Mock the global $fetch to avoid actual HTTP calls during tests
+const mockFetch = vi.fn();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for test mocking
+globalThis.$fetch = mockFetch as any;
 
 describe("useTerminalPersistence", () => {
 
@@ -73,7 +63,8 @@ describe("useTerminalPersistence", () => {
           branchName: "feature/test",
           worktreePath: "/path/to/worktree",
         },
-      };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test data with string dates gets converted at runtime
+      } as any;
 
       const mockResponse: ApiResponse<TerminalStatesData> = {
         success: true,
@@ -361,7 +352,7 @@ describe("useTerminalPersistence", () => {
     it("should handle update activity errors without throwing", async () => {
       const existingTerminal = {
         id: "term1",
-        name: "Test Terminal", 
+        name: "Test Terminal",
         status: "connected" as const,
         isActive: true,
         createdAt: "2025-07-21T08:00:00Z",
@@ -375,7 +366,7 @@ describe("useTerminalPersistence", () => {
         data: { terminals: { "term1": existingTerminal }, lastUpdate: "", version: "1.0.0" },
       });
 
-      // Mock failed save operation 
+      // Mock failed save operation
       mockFetch.mockRejectedValueOnce(new Error("Update failed"));
 
       const { updateLastActivity } = useTerminalPersistence();

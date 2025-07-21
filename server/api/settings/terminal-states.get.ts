@@ -1,4 +1,3 @@
-import { defineEventHandler } from "h3";
 import { SettingsFileService } from "~/server/services/settingsFiles";
 import type { ApiResponse } from "~/types";
 import type { TerminalStatesData } from "~/composables/useTerminalPersistence";

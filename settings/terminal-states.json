@@ -1,32 +1,5 @@
 {
   "terminals": {
-    "term_1753092658029_3y5vje": {
-      "id": "term_1753092658029_3y5vje",
-      "name": "adw",
-      "status": "disconnected",
-      "isActive": true,
-      "createdAt": "2025-07-21T10:10:58.029Z",
-      "terminalId": "term_1753092658029_3y5vje",
-      "lastActivity": "2025-07-21T10:10:58.589Z"
-    },
-    "term_1753092661114_ofz9on": {
-      "id": "term_1753092661114_ofz9on",
-      "name": "dawd",
-      "status": "disconnected",
-      "isActive": true,
-      "createdAt": "2025-07-21T10:11:01.114Z",
-      "terminalId": "term_1753092661114_ofz9on",
-      "lastActivity": "2025-07-21T10:11:01.675Z"
-    },
-    "term_1753092664703_cavsye": {
-      "id": "term_1753092664703_cavsye",
-      "name": "wadad",
-      "status": "disconnected",
-      "isActive": true,
-      "createdAt": "2025-07-21T10:11:04.703Z",
-      "terminalId": "term_1753092664703_cavsye",
-      "lastActivity": "2025-07-21T10:11:05.253Z"
-    },
     "term_1753092667768_9b3lda": {
       "id": "term_1753092667768_9b3lda",
       "name": "wad",
@@ -34,7 +7,7 @@
       "isActive": true,
       "createdAt": "2025-07-21T10:11:07.768Z",
       "terminalId": "term_1753092667768_9b3lda",
-      "lastActivity": "2025-07-21T10:11:08.322Z"
+      "lastActivity": "2025-07-21T10:46:21.839Z"
     },
     "term_1753092670395_98d6ht": {
       "id": "term_1753092670395_98d6ht",
@@ -43,18 +16,18 @@
       "isActive": true,
       "createdAt": "2025-07-21T10:11:10.395Z",
       "terminalId": "term_1753092670395_98d6ht",
-      "lastActivity": "2025-07-21T10:11:10.971Z"
+      "lastActivity": "2025-07-21T10:46:23.999Z"
     },
-    "term_1753092728137_rqpwet": {
-      "id": "term_1753092728137_rqpwet",
-      "name": "wadddd",
+    "term_1753094799276_6x6cdg": {
+      "id": "term_1753094799276_6x6cdg",
+      "name": "freed",
       "status": "disconnected",
       "isActive": true,
-      "createdAt": "2025-07-21T10:12:08.137Z",
-      "terminalId": "term_1753092728137_rqpwet",
-      "lastActivity": "2025-07-21T10:12:08.695Z"
+      "createdAt": "2025-07-21T10:46:39.276Z",
+      "terminalId": "term_1753094799276_6x6cdg",
+      "lastActivity": "2025-07-21T10:46:40.461Z"
     }
   },
-  "lastUpdate": "2025-07-21T10:14:54.370Z",
+  "lastUpdate": "2025-07-21T10:46:40.461Z",
   "version": "1.0.0"
 }

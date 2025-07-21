@@ -203,3 +203,6 @@ firefox-*.tar.bz2
 *.mp3
 *.wav
 *.flac
+
+# Application settings (runtime generated)
+settings/

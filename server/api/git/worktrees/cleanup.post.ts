@@ -1,8 +1,8 @@
-import { defineEventHandler, readBody } from "h3";
 import { GitWorktreeService } from "~/server/services/gitWorktree";
 import type { ApiResponse, NitroEvent } from "~/types";
 import { logger } from "~/utils/logger";
-import { useTerminalPersistence } from "~/composables/useTerminalPersistence";
+import { SettingsFileService } from "~/server/services/settingsFiles";
+import type { TerminalStatesData } from "~/composables/useTerminalPersistence";
 import { existsSync } from "fs";
 import { resolve } from "path";
 
@@ -57,10 +57,16 @@ export default defineEventHandler(async (event: NitroEvent): Promise<ApiResponse
     // Get all existing worktrees
     const worktrees = await worktreeService.listWorktrees();
 
-    // Get all active terminal IDs from persisted state
-    const persistence = useTerminalPersistence();
-    const terminalStates = await persistence.getAllTerminalStates();
-    const activeTerminalIds = new Set(Array.from(terminalStates.keys()));
+    // Get all active terminal IDs from persisted state using server-side service
+    const settingsService = SettingsFileService.getInstance();
+    const terminalStatesData = await settingsService.readCustomFile<TerminalStatesData>("terminal-states.json");
+
+    const activeTerminalIds = new Set<string>();
+    if (terminalStatesData?.terminals) {
+      for (const terminalId of Object.keys(terminalStatesData.terminals)) {
+        activeTerminalIds.add(terminalId);
+      }
+    }
 
     // Find orphaned worktrees
     for (const worktree of worktrees) {

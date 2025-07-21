@@ -1,16 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-
-// Mock logger with hoisted functions for proper access in tests
-const mockLogger = vi.hoisted(() => ({
-  debug: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-}));
-
-vi.mock("~/utils/logger", () => ({
-  logger: mockLogger,
-}));
+import { mockLogger } from "~/test/setup";
 
 // Mock useStartupCleanup composable
 const mockCleanupReport = {
@@ -41,7 +30,7 @@ vi.mock("nuxt/app", () => ({
 
 describe("startup-cleanup.client plugin", () => {
 
-  let pluginFunction: any;
+  let pluginFunction: (() => Promise<void>) | undefined;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -77,7 +66,7 @@ describe("startup-cleanup.client plugin", () => {
   it("should check if cleanup is needed and skip if not needed", async () => {
     mockStartupCleanup.isCleanupNeeded.mockResolvedValue(false);
 
-    await pluginFunction();
+    await pluginFunction?.();
 
     expect(mockStartupCleanup.isCleanupNeeded).toHaveBeenCalled();
     expect(mockLogger.debug).toHaveBeenCalledWith("No startup cleanup needed");
@@ -94,7 +83,7 @@ describe("startup-cleanup.client plugin", () => {
     });
 
     // Start the plugin (which will schedule cleanup after 1 second)
-    await pluginFunction();
+    await pluginFunction?.();
 
     expect(mockStartupCleanup.isCleanupNeeded).toHaveBeenCalled();
     expect(mockLogger.info).toHaveBeenCalledWith("Startup cleanup needed, running in background");
@@ -119,7 +108,7 @@ describe("startup-cleanup.client plugin", () => {
       errors: [],
     });
 
-    await pluginFunction();
+    await pluginFunction?.();
 
     // Fast-forward the setTimeout delay
     await vi.runAllTimersAsync();
@@ -140,7 +129,7 @@ describe("startup-cleanup.client plugin", () => {
       errors: ["Error 1", "Error 2"],
     });
 
-    await pluginFunction();
+    await pluginFunction?.();
 
     // Fast-forward the setTimeout delay
     await vi.runAllTimersAsync();
@@ -154,7 +143,7 @@ describe("startup-cleanup.client plugin", () => {
     const checkError = new Error("Check failed");
     mockStartupCleanup.isCleanupNeeded.mockRejectedValue(checkError);
 
-    await pluginFunction();
+    await pluginFunction?.();
 
     expect(mockLogger.error).toHaveBeenCalledWith("Startup cleanup check failed", { error: checkError });
     expect(mockStartupCleanup.performSafeStartupCleanup).not.toHaveBeenCalled();
@@ -165,7 +154,7 @@ describe("startup-cleanup.client plugin", () => {
     const cleanupError = new Error("Background cleanup failed");
     mockStartupCleanup.performSafeStartupCleanup.mockRejectedValue(cleanupError);
 
-    await pluginFunction();
+    await pluginFunction?.();
 
     // Fast-forward the setTimeout delay
     await vi.runAllTimersAsync();
@@ -177,7 +166,7 @@ describe("startup-cleanup.client plugin", () => {
     mockStartupCleanup.isCleanupNeeded.mockResolvedValue(true);
     const setTimeoutSpy = vi.spyOn(global, "setTimeout");
 
-    await pluginFunction();
+    await pluginFunction?.();
 
     expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 1000);
     expect(mockStartupCleanup.performSafeStartupCleanup).not.toHaveBeenCalled();
@@ -196,7 +185,7 @@ describe("startup-cleanup.client plugin", () => {
       errors: [],
     });
 
-    await pluginFunction();
+    await pluginFunction?.();
 
     // Fast-forward the setTimeout delay
     await vi.runAllTimersAsync();

@@ -1,4 +1,3 @@
-import { defineEventHandler, readBody } from "h3";
 import { SettingsFileService } from "~/server/services/settingsFiles";
 import type { ApiResponse, NitroEvent } from "~/types";
 import type { TerminalStatesData } from "~/composables/useTerminalPersistence";
