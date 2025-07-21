@@ -251,6 +251,11 @@ const getCreateButtonTitle = (): string => {
   background-color: var(--color-danger);
 }
 
+.status-error {
+  background-color: var(--color-danger);
+  animation: pulse 2s infinite;
+}
+
 .terminal-meta {
   display: flex;
   justify-content: space-between;
