@@ -72,15 +72,6 @@ Object.assign(MockWebSocketSpy, {
 });
 global.WebSocket = MockWebSocketSpy as unknown as typeof WebSocket;
 
-// Mock logger
-vi.mock("~/utils/logger", () => ({
-  logger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
 // Mock window.location
 Object.defineProperty(window, "location", {
   value: {

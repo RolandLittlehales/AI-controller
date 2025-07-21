@@ -2,16 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useSavedDirectories } from "./useSavedDirectories";
 import type { SavedDirectory } from "./useSavedDirectories";
 
-// Mock logger to prevent test output pollution
-vi.mock("~/utils/logger", () => ({
-  logger: {
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn(),
-  },
-}));
-
 // Mock localStorage
 const mockLocalStorage = {
   getItem: vi.fn(),

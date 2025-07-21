@@ -2,16 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import settingsInitPlugin from "./settings-init";
 import { initializeSettings } from "../services/settingsInit";
 
-// Mock logger to prevent output pollution
-vi.mock("~/utils/logger", () => ({
-  logger: {
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn(),
-  },
-}));
-
 // Mock the settings initialization service
 vi.mock("../services/settingsInit", () => ({
   initializeSettings: vi.fn(),

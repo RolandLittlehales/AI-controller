@@ -2,6 +2,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { logger } from "./logger";
 
+// Unmock logger for this test file - we need to test the actual implementation
+vi.unmock("~/utils/logger");
+
 describe("Logger", () => {
   // Mock console methods
   const originalConsole = {

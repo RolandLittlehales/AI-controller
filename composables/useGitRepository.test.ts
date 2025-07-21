@@ -16,15 +16,6 @@ vi.mock("simple-git", () => ({
 // This file tests client-side behavior only
 // Server-side tests are in useGitRepository.server.test.ts
 
-// Mock logger
-vi.mock("~/utils/logger", () => ({
-  logger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
 describe("useGitRepository", () => {
   beforeEach(() => {
     vi.clearAllMocks();

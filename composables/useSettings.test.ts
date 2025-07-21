@@ -1,21 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useSettings, useThemeSettings, useTerminalSettings, useSessionSettings } from "./useSettings";
 import { useSettingsStore } from "~/stores/settings";
-import { logger } from "~/utils/logger";
+import { mockLogger } from "~/test/setup";
 
 // Mock the settings store
 vi.mock("~/stores/settings", () => ({
   useSettingsStore: vi.fn(),
-}));
-
-// Mock the logger
-vi.mock("~/utils/logger", () => ({
-  logger: {
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn(),
-  },
 }));
 
 const mockStore = {
@@ -76,7 +66,7 @@ describe("useSettings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseSettingsStore.mockReturnValue(mockStore as unknown as ReturnType<typeof useSettingsStore>);
-    vi.mocked(logger.error).mockClear();
+    mockLogger.error.mockClear();
 
     // Mock window object
     Object.defineProperty(window, "window", {
@@ -123,7 +113,7 @@ describe("useSettings", () => {
     await settings.init();
 
     expect(mockStore.loadAllSettings).toHaveBeenCalled();
-    expect(logger.error).toHaveBeenCalledWith("Failed to initialize settings", { error: new Error("Init failed") });
+    expect(mockLogger.error).toHaveBeenCalledWith("Failed to initialize settings", { error: new Error("Init failed") });
   });
 });
 

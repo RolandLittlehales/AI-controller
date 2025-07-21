@@ -122,8 +122,8 @@ describe("TerminalStatus", () => {
   describe("prop validation", () => {
     it("should handle boolean isConnected prop", () => {
       const wrapper = mountComponent({
-          isConnected: false,
-          statusMessage: "Test message",
+        isConnected: false,
+        statusMessage: "Test message",
       });
 
       expect(wrapper.props("isConnected")).toBe(false);
@@ -133,8 +133,8 @@ describe("TerminalStatus", () => {
     it("should handle string statusMessage prop", () => {
       const longMessage = "This is a very long status message that should be displayed correctly without any truncation or formatting issues";
       const wrapper = mountComponent({
-          isConnected: false,
-          statusMessage: longMessage,
+        isConnected: false,
+        statusMessage: longMessage,
       });
 
       expect(wrapper.props("statusMessage")).toBe(longMessage);
@@ -145,8 +145,8 @@ describe("TerminalStatus", () => {
   describe("component structure", () => {
     it("should include warning icon", () => {
       const wrapper = mountComponent({
-          isConnected: false,
-          statusMessage: "Test message",
+        isConnected: false,
+        statusMessage: "Test message",
       });
 
       expect(wrapper.find(".status-message").exists()).toBe(true);
@@ -155,8 +155,8 @@ describe("TerminalStatus", () => {
 
     it("should have proper CSS classes", () => {
       const wrapper = mountComponent({
-          isConnected: false,
-          statusMessage: "Test message",
+        isConnected: false,
+        statusMessage: "Test message",
       });
 
       expect(wrapper.find(".terminal-status").classes()).toContain("terminal-status");
@@ -167,8 +167,8 @@ describe("TerminalStatus", () => {
   describe("reactive updates", () => {
     it("should update status message when props change", async () => {
       const wrapper = mountComponent({
-          isConnected: false,
-          statusMessage: "Initial message",
+        isConnected: false,
+        statusMessage: "Initial message",
       });
 
       expect(wrapper.find(".status-message").text()).toContain("Initial message");
@@ -179,8 +179,8 @@ describe("TerminalStatus", () => {
 
     it("should show/hide based on connection state", async () => {
       const wrapper = mountComponent({
-          isConnected: false,
-          statusMessage: "Disconnected",
+        isConnected: false,
+        statusMessage: "Disconnected",
       });
 
       expect(wrapper.find(".terminal-status").exists()).toBe(true);
@@ -195,8 +195,8 @@ describe("TerminalStatus", () => {
 
     it("should handle multiple rapid updates", async () => {
       const wrapper = mountComponent({
-          isConnected: false,
-          statusMessage: "Initial",
+        isConnected: false,
+        statusMessage: "Initial",
       });
 
       await wrapper.setProps({ statusMessage: "Connecting..." });
@@ -214,8 +214,8 @@ describe("TerminalStatus", () => {
   describe("component integration", () => {
     it("should handle complete status lifecycle", async () => {
       const wrapper = mountComponent({
-          isConnected: false,
-          statusMessage: "Terminal not connected",
+        isConnected: false,
+        statusMessage: "Terminal not connected",
       });
 
       // Initial state - visible
@@ -243,8 +243,8 @@ describe("TerminalStatus", () => {
 
     it("should handle edge cases", async () => {
       const wrapper = mountComponent({
-          isConnected: false,
-          statusMessage: "Normal message",
+        isConnected: false,
+        statusMessage: "Normal message",
       });
 
       // Empty message
@@ -265,8 +265,8 @@ describe("TerminalStatus", () => {
   describe("CSS classes", () => {
     it("should have consistent base classes", () => {
       const wrapper = mountComponent({
-          isConnected: false,
-          statusMessage: "Test",
+        isConnected: false,
+        statusMessage: "Test",
       });
 
       expect(wrapper.find(".terminal-status").exists()).toBe(true);
@@ -275,8 +275,8 @@ describe("TerminalStatus", () => {
 
     it("should only render when disconnected", async () => {
       const wrapper = mountComponent({
-          isConnected: false,
-          statusMessage: "Test",
+        isConnected: false,
+        statusMessage: "Test",
       });
 
       // Check initial state - disconnected

@@ -7,16 +7,6 @@ import type { ApiResponse } from "~/types";
 const mockFetch = vi.fn() as typeof globalThis.$fetch;
 globalThis.$fetch = mockFetch;
 
-// Mock logger for testing output
-vi.mock("~/utils/logger", () => ({
-  logger: {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
 describe("useStartupCleanup", () => {
   beforeEach(() => {
     vi.clearAllMocks();

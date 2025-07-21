@@ -110,16 +110,6 @@ vi.mock("~/composables/useSettings", () => ({
   }),
 }));
 
-// Mock the logger (external dependency)
-vi.mock("~/utils/logger", () => ({
-  logger: {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
 describe("useTerminalManagerStore", () => {
   beforeEach(() => {
     // Create fresh Pinia instance for each test
