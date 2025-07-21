@@ -53,20 +53,30 @@
     <!-- Connection overlay for disconnected state -->
     <div v-if="connectionStatus === 'disconnected'" class="connection-overlay">
       <div class="overlay-content">
-        <div class="overlay-icon">🔌</div>
-        <h3>Terminal Disconnected</h3>
-        <p>The terminal connection has been lost.</p>
-        <AppButton @click="reconnect">Reconnect</AppButton>
+        <div class="overlay-body">
+          <div class="overlay-icon">🔌</div>
+          <h3>Terminal Disconnected</h3>
+          <p>The terminal connection has been lost.</p>
+        </div>
+        <div class="overlay-footer">
+          <AppButton variant="secondary" @click="$emit('remove')">Close</AppButton>
+          <AppButton variant="primary" @click="reconnect">Reconnect</AppButton>
+        </div>
       </div>
     </div>
 
     <!-- Error overlay -->
     <div v-if="connectionStatus === 'error'" class="connection-overlay error">
       <div class="overlay-content">
-        <div class="overlay-icon">⚠️</div>
-        <h3>Terminal Error</h3>
-        <p>Failed to connect to terminal.</p>
-        <AppButton @click="reconnect">Try Again</AppButton>
+        <div class="overlay-body">
+          <div class="overlay-icon">⚠️</div>
+          <h3>Terminal Error</h3>
+          <p>Failed to connect to terminal.</p>
+        </div>
+        <div class="overlay-footer">
+          <AppButton variant="secondary" @click="$emit('remove')">Close</AppButton>
+          <AppButton variant="primary" @click="reconnect">Try Again</AppButton>
+        </div>
       </div>
     </div>
   </div>
@@ -233,9 +243,37 @@ const cleanupTerminal = (): void => {
  * Reconnect terminal
  */
 const reconnect = async (): Promise<void> => {
-  const connection = terminalStore.webSocketManager.getConnection(props.terminal.id);
-  if (connection) {
-    await connection.reconnect();
+  try {
+    connectionStatus.value = "connecting";
+
+    const connection = terminalStore.webSocketManager.getConnection(props.terminal.id);
+    if (connection) {
+      // Existing connection - use reconnect
+      await connection.reconnect();
+      return;
+    }
+
+    // No connection exists - recreate WebSocket connection for existing terminal
+    logger.info("Recreating WebSocket connection for disconnected terminal", { terminalId: props.terminal.id });
+
+    // Create new WebSocket connection using existing terminal data
+    const newConnection = terminalStore.webSocketManager.createConnection({
+      terminalId: props.terminal.id,
+      workingDirectory: props.terminal.workingDirectory,
+      onOutput: (output) => terminalStore.handleTerminalOutput(props.terminal.id, output),
+      onError: (error) => terminalStore.handleTerminalError(props.terminal.id, error),
+      onStatusChange: (status) => terminalStore.updateTerminalStatus(props.terminal.id, status),
+      onConnected: (serverTerminalId) => terminalStore.handleTerminalConnected(props.terminal.id, serverTerminalId),
+      onDisconnected: () => terminalStore.handleTerminalDisconnected(props.terminal.id),
+    });
+
+    // Start the connection
+    await newConnection.connect();
+
+  } catch (error) {
+    logger.error("Failed to reconnect terminal", { error, terminalId: props.terminal.id });
+    connectionStatus.value = "error";
+    terminalStore.updateTerminalStatus(props.terminal.id, "error");
   }
 };
 
@@ -475,9 +513,28 @@ onUnmounted(() => {
 }
 
 .overlay-content {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 400px;
+  width: 90%;
+  overflow: hidden;
+}
+
+.overlay-body {
   text-align: center;
   padding: var(--spacing-xl);
-  color: var(--color-text-primary);
+}
+
+.overlay-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-surface);
 }
 
 .overlay-icon {
@@ -495,7 +552,7 @@ onUnmounted(() => {
 .overlay-content p {
   font-size: var(--font-size-md);
   color: var(--color-text-secondary);
-  margin: 0 0 var(--spacing-md) 0;
+  margin: 0;
 }
 
 /* Responsive adjustments */

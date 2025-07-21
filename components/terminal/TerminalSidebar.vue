@@ -248,11 +248,11 @@ const getCreateButtonTitle = (): string => {
 }
 
 .status-disconnected {
-  background-color: var(--color-danger);
+  background-color: var(--color-error);
 }
 
 .status-error {
-  background-color: var(--color-danger);
+  background-color: var(--color-error);
   animation: pulse 2s infinite;
 }
 

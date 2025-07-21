@@ -192,9 +192,11 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
       };
 
       // Update persistence with new status
+      // Always persist as disconnected since terminals don't survive app restarts
+      const persistStatus = (status === "connected") ? "disconnected" : status;
       persistence.saveTerminalState(terminalId, {
         ...terminal,
-        status,
+        status: persistStatus,
         terminalId,
         lastActivity: new Date(),
       }).catch(error => {
@@ -333,6 +335,8 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
         ...terminal,
         terminalId,
         lastActivity: new Date(),
+        // Always persist as disconnected since terminals don't survive restarts
+        status: "disconnected",
       };
 
       // Only add properties if they have values
@@ -473,6 +477,12 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
     getTerminalOutput,
     removeTerminalWithCleanup,
     webSocketManager,
+
+    // Terminal event handlers (exposed for reconnection logic)
+    handleTerminalOutput,
+    handleTerminalError,
+    handleTerminalConnected,
+    handleTerminalDisconnected,
 
     // Persistence actions
     restoreTerminalsFromPersistence,

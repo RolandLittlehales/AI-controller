@@ -337,6 +337,52 @@ pnpm build       # Successful production build
 - **DRY (Don't Repeat Yourself)**: Code duplication SHOULD be minimized
 - **SOLID Principles**: Object-oriented code SHOULD follow SOLID principles
 - **Single Responsibility**: Functions and classes SHOULD have a single, clear purpose
+- **Early Returns**: Functions SHOULD use early returns instead of nested if-else structures where the pattern is `if (condition) { ... } else { ... }` and the function ends
+
+### Early Returns (Guard Clause Pattern)
+
+Functions SHOULD use early returns (guard clauses) to reduce nesting and improve readability:
+
+**❌ Avoid nested if-else when function ends:**
+```typescript
+const processConnection = async (connectionId: string) => {
+  const connection = getConnection(connectionId);
+  if (connection) {
+    await connection.reconnect();
+  } else {
+    // Long block of code here
+    const newConnection = createConnection({ ... });
+    await newConnection.connect();
+  }
+};
+```
+
+**✅ Use early returns for cleaner code:**
+```typescript
+const processConnection = async (connectionId: string) => {
+  const connection = getConnection(connectionId);
+  if (connection) {
+    await connection.reconnect();
+    return;
+  }
+
+  // Code continues at same indentation level
+  const newConnection = createConnection({ ... });
+  await newConnection.connect();
+};
+```
+
+**Benefits:**
+- Reduces cognitive load by eliminating nested blocks
+- Makes the happy path more obvious
+- Follows the "fail fast" principle
+- Improves code readability and maintainability
+
+**When to apply:**
+- Functions with simple if-else patterns that end the function
+- Input validation and early exits
+- Error handling scenarios
+- Resource existence checks
 
 ### 9.2 KISS Principle Implementation Guidelines
 

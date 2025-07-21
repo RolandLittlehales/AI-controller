@@ -44,9 +44,9 @@ export function useStartupCleanup() {
           const timeSinceActivity = now.getTime() - lastActivity.getTime();
 
           // Remove if:
-          // 1. More than 7 days since last activity AND disconnected
+          // 1. More than 7 days since last activity (regardless of status)
           // 2. OR invalid date/corrupted state
-          const shouldRemove = (timeSinceActivity > staleThreshold && state.status === "disconnected") ||
+          const shouldRemove = (timeSinceActivity > staleThreshold) ||
                               isNaN(lastActivity.getTime());
 
           if (shouldRemove) {
@@ -167,7 +167,7 @@ export function useStartupCleanup() {
         const lastActivity = new Date(state.lastActivity);
         const timeSinceActivity = now.getTime() - lastActivity.getTime();
 
-        if ((timeSinceActivity > staleThreshold && state.status === "disconnected") ||
+        if ((timeSinceActivity > staleThreshold) ||
             isNaN(lastActivity.getTime())) {
           return true;
         }
