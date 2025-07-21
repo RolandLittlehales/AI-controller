@@ -178,6 +178,18 @@ export class SettingsFileService {
   async updateSessionData(updates: Partial<SessionData>): Promise<SessionData> {
     return this.updateSettings<SessionData>("session", updates);
   }
+
+  // Custom file operations for non-standard settings
+  async readCustomFile<T>(filename: string): Promise<T | null> {
+    const filePath = join(SETTINGS_DIR, filename);
+    return this.readJsonFile<T>(filePath);
+  }
+
+  async writeCustomFile<T>(filename: string, data: T): Promise<void> {
+    await this.ensureSettingsDirectory();
+    const filePath = join(SETTINGS_DIR, filename);
+    await this.writeJsonFile(filePath, data);
+  }
 }
 
 export const settingsFileService = SettingsFileService.getInstance();
