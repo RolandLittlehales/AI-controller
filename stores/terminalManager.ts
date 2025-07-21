@@ -4,6 +4,7 @@ import { useSystemResources } from "~/composables/useSystemResources";
 import { useGitRepository } from "~/composables/useGitRepository";
 import { useMultiTerminalManager } from "~/composables/useMultiTerminalWebSocket";
 import { useTerminalSettings } from "~/composables/useSettings";
+import type { PersistedTerminalState } from "~/composables/useTerminalPersistence";
 import { useTerminalPersistence } from "~/composables/useTerminalPersistence";
 import { logger } from "~/utils/logger";
 // import type { MultiTerminalManager } from "~/composables/useMultiTerminalWebSocket";
@@ -331,24 +332,17 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
 
     // Save terminal state to persistence
     try {
-      const persistenceData: any = {
+      const persistenceData: Partial<PersistedTerminalState> = {
         ...terminal,
         terminalId,
         lastActivity: new Date(),
         // Always persist as disconnected since terminals don't survive restarts
         status: "disconnected",
+        // Only add properties if they have values
+        ...(terminal.git?.worktreePath && { worktreePath: terminal.git.worktreePath }),
+        ...(terminal.git?.branchName && { branchName: terminal.git.branchName }),
+        ...(options.workingDirectory && { basePath: options.workingDirectory }),
       };
-
-      // Only add properties if they have values
-      if (terminal.git?.worktreePath) {
-        persistenceData.worktreePath = terminal.git.worktreePath;
-      }
-      if (terminal.git?.branchName) {
-        persistenceData.branchName = terminal.git.branchName;
-      }
-      if (options.workingDirectory) {
-        persistenceData.basePath = options.workingDirectory;
-      }
 
       await persistence.saveTerminalState(terminalId, persistenceData);
     } catch (error) {

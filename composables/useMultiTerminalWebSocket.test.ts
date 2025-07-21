@@ -9,7 +9,7 @@ class MockWebSocket {
   static CLOSING = 2;
   static CLOSED = 3;
 
-  readyState = MockWebSocket.OPEN; // Start in OPEN state for tests
+  private _readyState = MockWebSocket.OPEN;
   url: string;
   onopen: ((event: Event) => void) | null = null;
   onmessage: ((event: MessageEvent) => void) | null = null;
@@ -20,15 +20,23 @@ class MockWebSocket {
     this.url = url;
   }
 
+  get readyState() {
+    return this._readyState;
+  }
+
+  set readyState(value: number) {
+    this._readyState = value;
+  }
+
   send(_data: string) {
-    if (this.readyState !== MockWebSocket.OPEN) {
+    if (this._readyState !== MockWebSocket.OPEN) {
       throw new Error("WebSocket is not open");
     }
     // Mock sending data
   }
 
   close(code?: number, reason?: string) {
-    this.readyState = MockWebSocket.CLOSED;
+    this._readyState = MockWebSocket.CLOSED;
     this.onclose?.(new CloseEvent("close", {
       code: code || 1000,
       reason: reason || "",
@@ -48,7 +56,7 @@ class MockWebSocket {
   }
 
   simulateOpen() {
-    this.readyState = MockWebSocket.OPEN;
+    this._readyState = MockWebSocket.OPEN;
     this.onopen?.(new Event("open"));
   }
 }

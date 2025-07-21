@@ -1,5 +1,4 @@
-// @ts-ignore - Nuxt auto-imports
-import { defineNuxtPlugin } from "#app";
+import { defineNuxtPlugin } from "nuxt/app";
 import { useStartupCleanup } from "~/composables/useStartupCleanup";
 import { logger } from "~/utils/logger";
 

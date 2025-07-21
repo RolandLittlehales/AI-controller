@@ -1,6 +1,6 @@
 import { defineEventHandler, readBody } from "h3";
 import { GitWorktreeService } from "~/server/services/gitWorktree";
-import type { ApiResponse } from "~/types";
+import type { ApiResponse, NitroEvent } from "~/types";
 import { logger } from "~/utils/logger";
 import { useTerminalPersistence } from "~/composables/useTerminalPersistence";
 import { existsSync } from "fs";
@@ -16,7 +16,7 @@ interface CleanupResult {
   errors: string[];
 }
 
-export default defineEventHandler(async (event: any): Promise<ApiResponse<CleanupResult>> => {
+export default defineEventHandler(async (event: NitroEvent): Promise<ApiResponse<CleanupResult>> => {
   try {
     const body = await readBody<CleanupRequest>(event);
     const dryRun = body?.dryRun ?? false;

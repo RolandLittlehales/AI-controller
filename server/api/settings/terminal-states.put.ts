@@ -1,10 +1,10 @@
 import { defineEventHandler, readBody } from "h3";
 import { SettingsFileService } from "~/server/services/settingsFiles";
-import type { ApiResponse } from "~/types";
+import type { ApiResponse, NitroEvent } from "~/types";
 import type { TerminalStatesData } from "~/composables/useTerminalPersistence";
 import { logger } from "~/utils/logger";
 
-export default defineEventHandler(async (event: any): Promise<ApiResponse<TerminalStatesData>> => {
+export default defineEventHandler(async (event: NitroEvent): Promise<ApiResponse<TerminalStatesData>> => {
   try {
     const body = await readBody<TerminalStatesData>(event);
 
