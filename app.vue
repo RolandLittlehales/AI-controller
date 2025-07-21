@@ -15,9 +15,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watchEffect } from "vue";
 import { useStartupCleanup } from "~/composables/useStartupCleanup";
 import { useTerminalManagerStore } from "~/stores/terminalManager";
+import { CLEANUP_INDICATOR_HIDE_DELAY_MS } from "~/utils/constants";
 
 // Global styles imported via nuxt.config.ts
 
@@ -40,31 +41,18 @@ onMounted(async () => {
 
   // Restore terminals from persistence
   await terminalStore.restoreTerminalsFromPersistence();
+});
 
-  // Watch cleanup status for indicator
-  let checkInterval = null;
-
-  checkInterval = setInterval(() => {
-    if (isRunning.value) {
-      showStartupIndicator.value = true;
-    } else if (showStartupIndicator.value) {
-      // Hide indicator after cleanup completes
-      setTimeout(() => {
-        showStartupIndicator.value = false;
-      }, 1000);
-
-      if (checkInterval) {
-        clearInterval(checkInterval);
-      }
-    }
-  }, 100);
-
-  // Clean up interval after 10 seconds (cleanup should be done by then)
-  setTimeout(() => {
-    if (checkInterval) {
-      clearInterval(checkInterval);
-    }
-  }, 10000);
+// Watch cleanup status reactively and manage indicator
+watchEffect(() => {
+  if (isRunning.value && !showStartupIndicator.value) {
+    showStartupIndicator.value = true;
+  } else if (!isRunning.value && showStartupIndicator.value) {
+    // Hide indicator after cleanup completes
+    setTimeout(() => {
+      showStartupIndicator.value = false;
+    }, CLEANUP_INDICATOR_HIDE_DELAY_MS);
+  }
 });
 </script>
 

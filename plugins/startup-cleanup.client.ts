@@ -1,6 +1,7 @@
 import { defineNuxtPlugin } from "nuxt/app";
 import { useStartupCleanup } from "~/composables/useStartupCleanup";
 import { logger } from "~/utils/logger";
+import { STARTUP_CLEANUP_DELAY_MS } from "~/utils/constants";
 
 /**
  * Startup Cleanup Plugin
@@ -44,7 +45,7 @@ export default defineNuxtPlugin(async () => {
         } catch (error) {
           logger.error("Background startup cleanup failed", { error });
         }
-      }, 1000); // Delay by 1 second to let app initialize
+      }, STARTUP_CLEANUP_DELAY_MS); // Delay to let app initialize
     } else {
       logger.debug("No startup cleanup needed");
     }

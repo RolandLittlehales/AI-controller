@@ -186,24 +186,24 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    */
   const updateTerminalStatus = (terminalId: string, status: BasicTerminal["status"]): void => {
     const terminal = terminals.value[terminalId];
-    if (terminal) {
-      terminals.value[terminalId] = {
-        ...terminal,
-        status,
-      };
+    if (!terminal) return;
 
-      // Update persistence with new status
-      // Always persist as disconnected since terminals don't survive app restarts
-      const persistStatus = (status === "connected") ? "disconnected" : status;
-      persistence.saveTerminalState(terminalId, {
-        ...terminal,
-        status: persistStatus,
-        terminalId,
-        lastActivity: new Date(),
-      }).catch(error => {
-        logger.warn("Failed to update terminal status in persistence", { terminalId, status, error });
-      });
-    }
+    terminals.value[terminalId] = {
+      ...terminal,
+      status,
+    };
+
+    // Update persistence with new status
+    // Always persist as disconnected since terminals don't survive app restarts
+    const persistStatus = status === "connected" ? "disconnected" : status;
+    persistence.saveTerminalState(terminalId, {
+      ...terminal,
+      status: persistStatus,
+      terminalId,
+      lastActivity: new Date(),
+    }).catch(error => {
+      logger.warn("Failed to update terminal status in persistence", { terminalId, status, error });
+    });
   };
 
   /**

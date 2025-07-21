@@ -1,13 +1,8 @@
 import { ref, readonly } from "vue";
 import { useTerminalPersistence } from "~/composables/useTerminalPersistence";
 import { logger } from "~/utils/logger";
-import type { ApiResponse } from "~/types";
-
-interface CleanupApiResponse {
-  cleanedCount: number;
-  orphanedWorktrees: string[];
-  errors: string[];
-}
+import { STALE_TERMINAL_THRESHOLD_MS } from "~/utils/constants";
+import type { ApiResponse, WorktreeCleanupResult } from "~/types";
 
 export interface CleanupReport {
   cleanedStates: number;
@@ -29,14 +24,13 @@ export function useStartupCleanup() {
   const cleanupReport = ref<CleanupReport | null>(null);
 
   /**
-   * Clean up stale terminal states older than 7 days
+   * Clean up stale terminal states older than the configured threshold
    */
   const cleanupStaleTerminalStates = async (report: CleanupReport): Promise<void> => {
     try {
       const persistence = useTerminalPersistence();
       const persistedStates = await persistence.getAllTerminalStates();
       const now = new Date();
-      const staleThreshold = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
       for (const [terminalId, state] of persistedStates) {
         try {
@@ -44,9 +38,9 @@ export function useStartupCleanup() {
           const timeSinceActivity = now.getTime() - lastActivity.getTime();
 
           // Remove if:
-          // 1. More than 7 days since last activity (regardless of status)
+          // 1. More than threshold days since last activity (regardless of status)
           // 2. OR invalid date/corrupted state
-          const shouldRemove = (timeSinceActivity > staleThreshold) ||
+          const shouldRemove = (timeSinceActivity > STALE_TERMINAL_THRESHOLD_MS) ||
                               isNaN(lastActivity.getTime());
 
           if (shouldRemove) {
@@ -78,7 +72,7 @@ export function useStartupCleanup() {
   const cleanupOrphanedWorktrees = async (report: CleanupReport): Promise<void> => {
     try {
       // Get list of orphaned worktrees from the server
-      const response = await $fetch<ApiResponse<CleanupApiResponse>>("/api/git/worktrees/cleanup", {
+      const response = await $fetch<ApiResponse<WorktreeCleanupResult>>("/api/git/worktrees/cleanup", {
         method: "POST",
         body: {
           dryRun: false,
@@ -104,7 +98,7 @@ export function useStartupCleanup() {
   /**
    * Perform safe startup cleanup operations
    *
-   * 1. Remove stale terminal states (> 7 days old and disconnected)
+   * 1. Remove stale terminal states (older than configured threshold)
    * 2. Clean up orphaned git worktrees
    * 3. Report cleanup results
    */
@@ -161,13 +155,12 @@ export function useStartupCleanup() {
       const persistence = useTerminalPersistence();
       const states = await persistence.getAllTerminalStates();
       const now = new Date();
-      const staleThreshold = 7 * 24 * 60 * 60 * 1000;
 
       for (const [_, state] of states) {
         const lastActivity = new Date(state.lastActivity);
         const timeSinceActivity = now.getTime() - lastActivity.getTime();
 
-        if ((timeSinceActivity > staleThreshold) ||
+        if ((timeSinceActivity > STALE_TERMINAL_THRESHOLD_MS) ||
             isNaN(lastActivity.getTime())) {
           return true;
         }

@@ -107,6 +107,13 @@ export interface SystemNotification extends WebSocketMessage {
   }
 }
 
+// Git and cleanup types
+export interface WorktreeCleanupResult {
+  cleanedCount: number
+  orphanedWorktrees: string[]
+  errors: string[]
+}
+
 // API Response types
 export interface ApiResponse<T = Record<string, unknown>> {
   success: boolean
