@@ -4,6 +4,8 @@ import { useSystemResources } from "~/composables/useSystemResources";
 import { useGitRepository } from "~/composables/useGitRepository";
 import { useMultiTerminalManager } from "~/composables/useMultiTerminalWebSocket";
 import { useTerminalSettings } from "~/composables/useSettings";
+import type { PersistedTerminalState } from "~/composables/useTerminalPersistence";
+import { useTerminalPersistence } from "~/composables/useTerminalPersistence";
 import { logger } from "~/utils/logger";
 // import type { MultiTerminalManager } from "~/composables/useMultiTerminalWebSocket";
 
@@ -50,6 +52,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
   const gitRepository = useGitRepository();
   const webSocketManager = useMultiTerminalManager();
   const terminalSettings = useTerminalSettings();
+  const persistence = useTerminalPersistence();
 
   // Initialize system resources on store creation
   systemResources.detectSystemCapability();
@@ -183,12 +186,24 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    */
   const updateTerminalStatus = (terminalId: string, status: BasicTerminal["status"]): void => {
     const terminal = terminals.value[terminalId];
-    if (terminal) {
-      terminals.value[terminalId] = {
-        ...terminal,
-        status,
-      };
-    }
+    if (!terminal) return;
+
+    terminals.value[terminalId] = {
+      ...terminal,
+      status,
+    };
+
+    // Update persistence with new status
+    // Always persist as disconnected since terminals don't survive app restarts
+    const persistStatus = status === "connected" ? "disconnected" : status;
+    persistence.saveTerminalState(terminalId, {
+      ...terminal,
+      status: persistStatus,
+      terminalId,
+      lastActivity: new Date(),
+    }).catch(error => {
+      logger.warn("Failed to update terminal status in persistence", { terminalId, status, error });
+    });
   };
 
   /**
@@ -315,6 +330,26 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
     // Start connection
     await connection.connect();
 
+    // Save terminal state to persistence
+    try {
+      const persistenceData: Partial<PersistedTerminalState> = {
+        ...terminal,
+        terminalId,
+        lastActivity: new Date(),
+        // Always persist as disconnected since terminals don't survive restarts
+        status: "disconnected",
+        // Only add properties if they have values
+        ...(terminal.git?.worktreePath && { worktreePath: terminal.git.worktreePath }),
+        ...(terminal.git?.branchName && { branchName: terminal.git.branchName }),
+        ...(options.workingDirectory && { basePath: options.workingDirectory }),
+      };
+
+      await persistence.saveTerminalState(terminalId, persistenceData);
+    } catch (error) {
+      logger.warn("Failed to persist terminal state", { terminalId, error });
+      // Don't fail terminal creation if persistence fails
+    }
+
     return terminalId;
   };
 
@@ -355,6 +390,51 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
 
     // Remove from terminals map
     removeTerminal(terminalId);
+
+    // Remove from persistence
+    try {
+      await persistence.removeTerminalState(terminalId);
+    } catch (error) {
+      logger.warn("Failed to remove terminal state from persistence", { terminalId, error });
+      // Don't fail terminal removal if persistence fails
+    }
+  };
+
+  /**
+   * Restore terminals from persistence (called on app startup)
+   * Note: This only restores the terminal metadata, not the actual connections
+   */
+  const restoreTerminalsFromPersistence = async (): Promise<void> => {
+    try {
+      const persistedStates = await persistence.getAllTerminalStates();
+      logger.info("Restoring terminals from persistence", { count: persistedStates.size });
+
+      for (const [terminalId, state] of persistedStates) {
+        // Only restore if terminal doesn't already exist
+        if (!terminals.value[terminalId]) {
+          const terminal: BasicTerminal = {
+            id: state.id,
+            name: state.name,
+            status: "disconnected", // Always start as disconnected
+            isActive: false,
+            createdAt: new Date(state.createdAt),
+          };
+
+          // Only add optional properties if they exist
+          if (state.git) {
+            terminal.git = state.git;
+          }
+          if (state.workingDirectory) {
+            terminal.workingDirectory = state.workingDirectory;
+          }
+
+          terminals.value[terminalId] = terminal;
+          logger.debug("Restored terminal from persistence", { terminalId, name: terminal.name });
+        }
+      }
+    } catch (error) {
+      logger.error("Failed to restore terminals from persistence", { error });
+    }
   };
 
   return {
@@ -391,5 +471,15 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
     getTerminalOutput,
     removeTerminalWithCleanup,
     webSocketManager,
+
+    // Terminal event handlers (exposed for reconnection logic)
+    handleTerminalOutput,
+    handleTerminalError,
+    handleTerminalConnected,
+    handleTerminalDisconnected,
+
+    // Persistence actions
+    restoreTerminalsFromPersistence,
+    persistence,
   };
 });

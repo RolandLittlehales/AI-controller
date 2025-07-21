@@ -2,14 +2,31 @@ import { describe, it, expect, test } from "vitest";
 import { mount } from "@vue/test-utils";
 import TerminalStatus from "~/components/terminal/TerminalStatus.vue";
 
+// Mock Icon component for testing
+const IconMock = {
+  name: "Icon",
+  template: '<span class="mock-icon" :data-icon="name"><slot /></span>',
+  props: ["name", "size"],
+};
+
+// Helper function to mount component with global components
+const mountComponent = (props: { isConnected: boolean; statusMessage: string }) => {
+  return mount(TerminalStatus, {
+    props,
+    global: {
+      components: {
+        Icon: IconMock,
+      },
+    },
+  });
+};
+
 describe("TerminalStatus", () => {
   describe("rendering", () => {
     it("should render when not connected", () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Terminal not connected",
-        },
+      const wrapper = mountComponent({
+        isConnected: false,
+        statusMessage: "Terminal not connected",
       });
 
       expect(wrapper.find(".terminal-status").exists()).toBe(true);
@@ -17,33 +34,27 @@ describe("TerminalStatus", () => {
     });
 
     it("should not render when connected", () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: true,
-          statusMessage: "Terminal connected",
-        },
+      const wrapper = mountComponent({
+        isConnected: true,
+        statusMessage: "Terminal connected",
       });
 
       expect(wrapper.find(".terminal-status").exists()).toBe(false);
     });
 
     it("should display custom status message when disconnected", () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Connection failed",
-        },
+      const wrapper = mountComponent({
+        isConnected: false,
+        statusMessage: "Connection failed",
       });
 
       expect(wrapper.find(".status-message").text()).toContain("Connection failed");
     });
 
     it("should handle empty status message", () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "",
-        },
+      const wrapper = mountComponent({
+        isConnected: false,
+        statusMessage: "",
       });
 
       expect(wrapper.find(".status-message").text()).toBe("");
@@ -65,9 +76,7 @@ describe("TerminalStatus", () => {
         expectedVisible: false,
       },
     ])("$description", ({ isConnected, statusMessage, expectedVisible }: { isConnected: boolean; statusMessage: string; expectedVisible: boolean }) => {
-      const wrapper = mount(TerminalStatus, {
-        props: { isConnected, statusMessage },
-      });
+      const wrapper = mountComponent({ isConnected, statusMessage });
 
       expect(wrapper.find(".terminal-status").exists()).toBe(expectedVisible);
     });
@@ -100,9 +109,7 @@ describe("TerminalStatus", () => {
         expectedVisible: true,
       },
     ])("$description", ({ isConnected, statusMessage, expectedVisible }: { isConnected: boolean; statusMessage: string; expectedVisible: boolean }) => {
-      const wrapper = mount(TerminalStatus, {
-        props: { isConnected, statusMessage },
-      });
+      const wrapper = mountComponent({ isConnected, statusMessage });
 
       expect(wrapper.find(".terminal-status").exists()).toBe(expectedVisible);
 
@@ -114,11 +121,9 @@ describe("TerminalStatus", () => {
 
   describe("prop validation", () => {
     it("should handle boolean isConnected prop", () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Test message",
-        },
+      const wrapper = mountComponent({
+        isConnected: false,
+        statusMessage: "Test message",
       });
 
       expect(wrapper.props("isConnected")).toBe(false);
@@ -127,11 +132,9 @@ describe("TerminalStatus", () => {
 
     it("should handle string statusMessage prop", () => {
       const longMessage = "This is a very long status message that should be displayed correctly without any truncation or formatting issues";
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: longMessage,
-        },
+      const wrapper = mountComponent({
+        isConnected: false,
+        statusMessage: longMessage,
       });
 
       expect(wrapper.props("statusMessage")).toBe(longMessage);
@@ -141,11 +144,9 @@ describe("TerminalStatus", () => {
 
   describe("component structure", () => {
     it("should include warning icon", () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Test message",
-        },
+      const wrapper = mountComponent({
+        isConnected: false,
+        statusMessage: "Test message",
       });
 
       expect(wrapper.find(".status-message").exists()).toBe(true);
@@ -153,11 +154,9 @@ describe("TerminalStatus", () => {
     });
 
     it("should have proper CSS classes", () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Test message",
-        },
+      const wrapper = mountComponent({
+        isConnected: false,
+        statusMessage: "Test message",
       });
 
       expect(wrapper.find(".terminal-status").classes()).toContain("terminal-status");
@@ -167,11 +166,9 @@ describe("TerminalStatus", () => {
 
   describe("reactive updates", () => {
     it("should update status message when props change", async () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Initial message",
-        },
+      const wrapper = mountComponent({
+        isConnected: false,
+        statusMessage: "Initial message",
       });
 
       expect(wrapper.find(".status-message").text()).toContain("Initial message");
@@ -181,11 +178,9 @@ describe("TerminalStatus", () => {
     });
 
     it("should show/hide based on connection state", async () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Disconnected",
-        },
+      const wrapper = mountComponent({
+        isConnected: false,
+        statusMessage: "Disconnected",
       });
 
       expect(wrapper.find(".terminal-status").exists()).toBe(true);
@@ -199,11 +194,9 @@ describe("TerminalStatus", () => {
     });
 
     it("should handle multiple rapid updates", async () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Initial",
-        },
+      const wrapper = mountComponent({
+        isConnected: false,
+        statusMessage: "Initial",
       });
 
       await wrapper.setProps({ statusMessage: "Connecting..." });
@@ -220,11 +213,9 @@ describe("TerminalStatus", () => {
 
   describe("component integration", () => {
     it("should handle complete status lifecycle", async () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Terminal not connected",
-        },
+      const wrapper = mountComponent({
+        isConnected: false,
+        statusMessage: "Terminal not connected",
       });
 
       // Initial state - visible
@@ -251,11 +242,9 @@ describe("TerminalStatus", () => {
     });
 
     it("should handle edge cases", async () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Normal message",
-        },
+      const wrapper = mountComponent({
+        isConnected: false,
+        statusMessage: "Normal message",
       });
 
       // Empty message
@@ -275,11 +264,9 @@ describe("TerminalStatus", () => {
 
   describe("CSS classes", () => {
     it("should have consistent base classes", () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Test",
-        },
+      const wrapper = mountComponent({
+        isConnected: false,
+        statusMessage: "Test",
       });
 
       expect(wrapper.find(".terminal-status").exists()).toBe(true);
@@ -287,11 +274,9 @@ describe("TerminalStatus", () => {
     });
 
     it("should only render when disconnected", async () => {
-      const wrapper = mount(TerminalStatus, {
-        props: {
-          isConnected: false,
-          statusMessage: "Test",
-        },
+      const wrapper = mountComponent({
+        isConnected: false,
+        statusMessage: "Test",
       });
 
       // Check initial state - disconnected

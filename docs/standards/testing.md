@@ -105,11 +105,32 @@ Tests **MUST** mock only external dependencies outside our control:
 
 #### ❌ What MUST NOT Be Mocked
 
-- **Internal services**: Our own business logic and utilities
-- **Logger utility**: Let it actually log during tests for debugging
+- **Internal services**: Our own business logic and utilities  
 - **Vue components**: Use real components when possible
 - **Type definitions**: Interfaces and type structures
 - **Internal business logic**: Service methods and functions we control
+
+#### ⚡ Special Case: Logger Utility
+
+- **Logger utility**: MUST be mocked globally to intercept log calls, keep test console clean, and enable log message assertions
+- **Purpose**: Mocking allows verification of logging behavior while preventing test output pollution
+- **Implementation**: Use global mock in `test/setup.ts` for consistency across all tests
+
+**Usage Pattern:**
+```typescript
+// Import mockLogger when you need to make assertions
+import { mockLogger } from "~/test/setup";
+
+// Use in assertions
+expect(mockLogger.error).toHaveBeenCalledWith("Error message", { context });
+
+// Reset in beforeEach if needed
+beforeEach(() => {
+  mockLogger.error.mockClear();
+});
+```
+
+**Exception:** Files testing the actual logger implementation (e.g., `utils/logger.test.ts`) should use `vi.unmock("~/utils/logger")` to test the real implementation.
 
 ### Mock Implementation Standards
 

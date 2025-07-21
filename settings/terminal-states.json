@@ -1,0 +1,33 @@
+{
+  "terminals": {
+    "term_1753092667768_9b3lda": {
+      "id": "term_1753092667768_9b3lda",
+      "name": "wad",
+      "status": "disconnected",
+      "isActive": true,
+      "createdAt": "2025-07-21T10:11:07.768Z",
+      "terminalId": "term_1753092667768_9b3lda",
+      "lastActivity": "2025-07-21T10:46:21.839Z"
+    },
+    "term_1753092670395_98d6ht": {
+      "id": "term_1753092670395_98d6ht",
+      "name": "awdwad",
+      "status": "disconnected",
+      "isActive": true,
+      "createdAt": "2025-07-21T10:11:10.395Z",
+      "terminalId": "term_1753092670395_98d6ht",
+      "lastActivity": "2025-07-21T10:46:23.999Z"
+    },
+    "term_1753094799276_6x6cdg": {
+      "id": "term_1753094799276_6x6cdg",
+      "name": "freed",
+      "status": "disconnected",
+      "isActive": true,
+      "createdAt": "2025-07-21T10:46:39.276Z",
+      "terminalId": "term_1753094799276_6x6cdg",
+      "lastActivity": "2025-07-21T10:46:40.461Z"
+    }
+  },
+  "lastUpdate": "2025-07-21T10:46:40.461Z",
+  "version": "1.0.0"
+}

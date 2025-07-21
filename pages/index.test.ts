@@ -6,16 +6,6 @@ import IndexPage from "./index.vue";
 // Mock $fetch for settings API calls
 global.$fetch = vi.fn().mockResolvedValue({}) as unknown as typeof $fetch;
 
-// Mock logger to prevent test output pollution
-vi.mock("~/utils/logger", () => ({
-  logger: {
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn(),
-  },
-}));
-
 // Mock terminal components - they have their own comprehensive tests
 vi.mock("~/components/terminal/TerminalSidebar.vue", () => ({
   default: {

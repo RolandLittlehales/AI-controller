@@ -37,3 +37,30 @@ esac
 
 # Exit successfully
 exit 0
+
+
+
+  // "hooks": {
+  //   "Notification": [
+  //     {
+  //       "matcher": "",
+  //       "hooks": [
+  //         {
+  //           "type": "command",
+  //           "command": "/home/rolan/code/ai-controller/.claude/hooks/notification-bell.sh"
+  //         }
+  //       ]
+  //     }
+  //   ],
+  //   "Stop": [
+  //     {
+  //       "matcher": "",
+  //       "hooks": [
+  //         {
+  //           "type": "command",
+  //           "command": "/home/rolan/code/ai-controller/.claude/hooks/notification-bell.sh"
+  //         }
+  //       ]
+  //     }
+  //   ]
+  // }

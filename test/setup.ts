@@ -97,4 +97,17 @@ vi.mock("node:fs", async () => {
   };
 });
 
-// Logger mock is handled in individual test files as needed
+// Global logger mock for clean test output and log assertions
+const mockLogger = vi.hoisted(() => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}));
+
+vi.mock("~/utils/logger", () => ({
+  logger: mockLogger,
+}));
+
+// Export the mock for use in test assertions
+export { mockLogger };

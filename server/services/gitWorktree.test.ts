@@ -12,15 +12,6 @@ vi.mock("simple-git", () => ({
   simpleGit: vi.fn(() => mockGit),
 }));
 
-// Mock logger
-vi.mock("~/utils/logger", () => ({
-  logger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
 describe("GitWorktreeService", () => {
   let service: GitWorktreeService;
   const testGitRoot = "/test/project";

@@ -110,15 +110,6 @@ vi.mock("~/composables/useSettings", () => ({
   }),
 }));
 
-// Mock the logger (external dependency)
-vi.mock("~/utils/logger", () => ({
-  logger: {
-    debug: vi.fn(),
-    info: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
 describe("useTerminalManagerStore", () => {
   beforeEach(() => {
     // Create fresh Pinia instance for each test
@@ -782,9 +773,9 @@ describe("useTerminalManagerStore", () => {
       // Set first terminal as active
       store.setActiveTerminal(terminal1Id);
 
-      // Manually corrupt the terminals state to simulate edge case
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-dynamic-delete
-      delete (store as any).terminals[terminal1Id];
+      // Simulate the edge case by removing the active terminal
+      // This tests the actual scenario rather than corrupting state
+      store.removeTerminal(terminal1Id);
 
       // Should handle gracefully when switching to another terminal
       expect(() => {
