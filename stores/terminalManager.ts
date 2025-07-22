@@ -78,10 +78,10 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
   /**
    * Create a new terminal with unique ID and options
    * @param options - Terminal creation options
-   * @returns Terminal ID
-   * @throws Error if terminal limit reached or git operation fails
+   * @returns Promise<Terminal ID>
+   * @throws Error if terminal limit reached, git operation fails, or server ID generation fails
    */
-  const createTerminal = (options: CreateTerminalOptions | string): string => {
+  const createTerminal = async (options: CreateTerminalOptions | string): Promise<string> => {
     if (!canCreateTerminal.value) {
       throw new Error("Terminal limit reached");
     }
@@ -96,9 +96,21 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
       throw new Error(`Terminal name "${terminalOptions.name}" is already in use`);
     }
 
-    // Generate unique terminal ID with consistent length
-    const randomPart = Math.random().toString(36).substring(2, 8).padEnd(6, "0");
-    const terminalId = `term_${Date.now()}_${randomPart}`;
+    // Generate unique terminal ID from server
+    let terminalId: string;
+    try {
+      const response = await $fetch<{ success: boolean; data?: { terminalId: string }; error?: string }>("/api/terminals/generate-id", {
+        method: "POST",
+      });
+
+      if (!response.success || !response.data?.terminalId) {
+        throw new Error(response.error || "Failed to generate terminal ID");
+      }
+
+      ({ terminalId } = response.data);
+    } catch (error) {
+      throw new Error(`Failed to generate terminal ID: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
 
     const terminal: BasicTerminal = {
       id: terminalId,
@@ -309,7 +321,7 @@ export const useTerminalManagerStore = defineStore("terminalManager", () => {
    * @returns Promise<string> Terminal ID
    */
   const createTerminalWithWebSocket = async (options: CreateTerminalOptions): Promise<string> => {
-    const terminalId = createTerminal(options);
+    const terminalId = await createTerminal(options);
     const terminal = terminals.value[terminalId];
 
     if (!terminal) {

@@ -110,6 +110,10 @@ vi.mock("~/composables/useSettings", () => ({
   }),
 }));
 
+// Mock $fetch for server terminal ID generation
+const mockFetch = vi.fn();
+vi.stubGlobal("$fetch", mockFetch);
+
 describe("useTerminalManagerStore", () => {
   beforeEach(() => {
     // Create fresh Pinia instance for each test
@@ -117,6 +121,14 @@ describe("useTerminalManagerStore", () => {
     vi.clearAllMocks();
     // Clear mock connections between tests
     mockConnections.clear();
+
+    // Setup default successful response for terminal ID generation with unique IDs
+    mockFetch.mockImplementation(() => Promise.resolve({
+      success: true,
+      data: {
+        terminalId: "mock-terminal-id-" + Math.random().toString(36).substr(2, 9),
+      },
+    }));
   });
 
   it("should initialize with empty state", () => {
@@ -129,12 +141,12 @@ describe("useTerminalManagerStore", () => {
     expect(store.getActiveTerminal).toBeUndefined();
   });
 
-  it("should create terminals correctly", () => {
+  it("should create terminals correctly", async () => {
     const store = useTerminalManagerStore();
 
-    const terminalId = store.createTerminal("Test Terminal");
+    const terminalId = await store.createTerminal("Test Terminal");
 
-    expect(terminalId).toMatch(/^term_\d+_[a-z0-9]{6}$/);
+    expect(terminalId).toMatch(/^mock-terminal-id-/);
     expect(store.terminalCount).toBe(1);
 
     const terminal = store.getTerminal(terminalId);
@@ -144,32 +156,35 @@ describe("useTerminalManagerStore", () => {
     expect(terminal?.status).toBe("connecting");
     expect(terminal?.isActive).toBe(false);
     expect(terminal?.createdAt).toBeInstanceOf(Date);
+
+    // Verify server was called for ID generation
+    expect(mockFetch).toHaveBeenCalledWith("/api/terminals/generate-id", {
+      method: "POST",
+    });
   });
 
-  it("should enforce terminal limits", () => {
+  it("should enforce terminal limits", async () => {
     const store = useTerminalManagerStore();
 
     // Create terminals up to the limit (6)
     for (let i = 1; i <= 6; i++) {
-      store.createTerminal(`Terminal ${i}`);
+      await store.createTerminal(`Terminal ${i}`);
     }
 
     expect(store.terminalCount).toBe(6);
     expect(store.canCreateTerminal).toBe(false);
 
     // Attempt to create one more should throw
-    expect(() => {
-      store.createTerminal("Terminal 7");
-    }).toThrow("Terminal limit reached");
+    await expect(store.createTerminal("Terminal 7")).rejects.toThrow("Terminal limit reached");
 
     expect(store.terminalCount).toBe(6);
   });
 
-  it("should handle active terminal switching correctly", () => {
+  it("should handle active terminal switching correctly", async () => {
     const store = useTerminalManagerStore();
 
-    const terminal1Id = store.createTerminal("Terminal 1");
-    const terminal2Id = store.createTerminal("Terminal 2");
+    const terminal1Id = await store.createTerminal("Terminal 1");
+    const terminal2Id = await store.createTerminal("Terminal 2");
 
     // Initially no active terminal
     expect(store.activeTerminalId).toBeNull();
@@ -206,12 +221,12 @@ describe("useTerminalManagerStore", () => {
     expect(store.getActiveTerminal).toBeUndefined();
   });
 
-  it("should remove terminals correctly", () => {
+  it("should remove terminals correctly", async () => {
     const store = useTerminalManagerStore();
 
-    const terminal1Id = store.createTerminal("Terminal 1");
-    const terminal2Id = store.createTerminal("Terminal 2");
-    const terminal3Id = store.createTerminal("Terminal 3");
+    const terminal1Id = await store.createTerminal("Terminal 1");
+    const terminal2Id = await store.createTerminal("Terminal 2");
+    const terminal3Id = await store.createTerminal("Terminal 3");
 
     expect(store.terminalCount).toBe(3);
 
@@ -223,12 +238,12 @@ describe("useTerminalManagerStore", () => {
     expect(store.getTerminal(terminal3Id)).toBeDefined();
   });
 
-  it("should handle active terminal removal with automatic switching", () => {
+  it("should handle active terminal removal with automatic switching", async () => {
     const store = useTerminalManagerStore();
 
-    const terminal1Id = store.createTerminal("Terminal 1");
-    const terminal2Id = store.createTerminal("Terminal 2");
-    store.createTerminal("Terminal 3");
+    const terminal1Id = await store.createTerminal("Terminal 1");
+    const terminal2Id = await store.createTerminal("Terminal 2");
+    await store.createTerminal("Terminal 3");
 
     // Set second terminal as active
     store.setActiveTerminal(terminal2Id);
@@ -243,10 +258,10 @@ describe("useTerminalManagerStore", () => {
     expect(store.getTerminal(terminal1Id)?.isActive).toBe(true);
   });
 
-  it("should handle removing last terminal", () => {
+  it("should handle removing last terminal", async () => {
     const store = useTerminalManagerStore();
 
-    const terminalId = store.createTerminal("Only Terminal");
+    const terminalId = await store.createTerminal("Only Terminal");
     store.setActiveTerminal(terminalId);
 
     // Remove the only terminal
@@ -257,10 +272,10 @@ describe("useTerminalManagerStore", () => {
     expect(store.getActiveTerminal).toBeUndefined();
   });
 
-  it("should handle removing non-existent terminal gracefully", () => {
+  it("should handle removing non-existent terminal gracefully", async () => {
     const store = useTerminalManagerStore();
 
-    const terminalId = store.createTerminal("Test Terminal");
+    const terminalId = await store.createTerminal("Test Terminal");
     expect(store.terminalCount).toBe(1);
 
     // Try to remove non-existent terminal
@@ -269,10 +284,10 @@ describe("useTerminalManagerStore", () => {
     expect(store.getTerminal(terminalId)).toBeDefined();
   });
 
-  it("should update terminal status correctly", () => {
+  it("should update terminal status correctly", async () => {
     const store = useTerminalManagerStore();
 
-    const terminalId = store.createTerminal("Test Terminal");
+    const terminalId = await store.createTerminal("Test Terminal");
     expect(store.getTerminal(terminalId)?.status).toBe("connecting");
 
     // Update to connected
@@ -293,11 +308,11 @@ describe("useTerminalManagerStore", () => {
     }).not.toThrow();
   });
 
-  it("should return all terminals as array", () => {
+  it("should return all terminals as array", async () => {
     const store = useTerminalManagerStore();
 
-    const terminal1Id = store.createTerminal("Terminal 1");
-    const terminal2Id = store.createTerminal("Terminal 2");
+    const terminal1Id = await store.createTerminal("Terminal 1");
+    const terminal2Id = await store.createTerminal("Terminal 2");
 
     const allTerminals = store.getAllTerminals;
     expect(allTerminals).toHaveLength(2);
@@ -307,14 +322,14 @@ describe("useTerminalManagerStore", () => {
     expect(allTerminals.map(t => t.name)).toContain("Terminal 2");
   });
 
-  it("should maintain unique terminal IDs", () => {
+  it("should maintain unique terminal IDs", async () => {
     const store = useTerminalManagerStore();
 
     const ids = new Set<string>();
 
     // Create terminals up to the limit (6)
     for (let i = 0; i < 6; i++) {
-      const id = store.createTerminal(`Terminal ${i}`);
+      const id = await store.createTerminal(`Terminal ${i}`);
       expect(ids.has(id)).toBe(false);
       ids.add(id);
     }
@@ -323,11 +338,11 @@ describe("useTerminalManagerStore", () => {
     expect(store.terminalCount).toBe(6); // Limited by maxTerminals
   });
 
-  it("should track terminal creation time", () => {
+  it("should track terminal creation time", async () => {
     const store = useTerminalManagerStore();
     const beforeCreation = new Date();
 
-    const terminalId = store.createTerminal("Timed Terminal");
+    const terminalId = await store.createTerminal("Timed Terminal");
     const terminal = store.getTerminal(terminalId);
 
     const afterCreation = new Date();
@@ -337,11 +352,11 @@ describe("useTerminalManagerStore", () => {
     expect(terminal?.createdAt.getTime()).toBeLessThanOrEqual(afterCreation.getTime());
   });
 
-  it("should provide readonly access to internal state", () => {
+  it("should provide readonly access to internal state", async () => {
     const store = useTerminalManagerStore();
 
     // Create a terminal to test with
-    const terminalId = store.createTerminal("Test Terminal");
+    const terminalId = await store.createTerminal("Test Terminal");
     const originalCount = store.terminalCount;
 
     // Test that terminals state provides readonly access - don't actually try to modify
@@ -359,10 +374,10 @@ describe("useTerminalManagerStore", () => {
   });
 
   describe("Git Integration", () => {
-    it("should create terminal with git information when git is enabled", () => {
+    it("should create terminal with git information when git is enabled", async () => {
       const store = useTerminalManagerStore();
 
-      const terminalId = store.createTerminal({
+      const terminalId = await store.createTerminal({
         name: "Git Terminal",
         useGit: true,
         branchName: "feature/test",
@@ -376,10 +391,10 @@ describe("useTerminalManagerStore", () => {
       expect(terminal?.git?.isTemporary).toBe(false);
     });
 
-    it("should create terminal with temporary branch when no branch specified", () => {
+    it("should create terminal with temporary branch when no branch specified", async () => {
       const store = useTerminalManagerStore();
 
-      const terminalId = store.createTerminal({
+      const terminalId = await store.createTerminal({
         name: "Temp Git Terminal",
         useGit: true,
       });
@@ -390,10 +405,10 @@ describe("useTerminalManagerStore", () => {
       expect(terminal?.git?.isTemporary).toBe(true);
     });
 
-    it("should create regular terminal when git is disabled", () => {
+    it("should create regular terminal when git is disabled", async () => {
       const store = useTerminalManagerStore();
 
-      const terminalId = store.createTerminal({
+      const terminalId = await store.createTerminal({
         name: "Regular Terminal",
         useGit: false,
       });
@@ -402,21 +417,21 @@ describe("useTerminalManagerStore", () => {
       expect(terminal?.git).toBeUndefined();
     });
 
-    it("should support legacy string parameter for createTerminal", () => {
+    it("should support legacy string parameter for createTerminal", async () => {
       const store = useTerminalManagerStore();
 
-      const terminalId = store.createTerminal("Legacy Terminal");
+      const terminalId = await store.createTerminal("Legacy Terminal");
       const terminal = store.getTerminal(terminalId);
 
       expect(terminal?.name).toBe("Legacy Terminal");
       expect(terminal?.git).toBeUndefined();
     });
 
-    it("should create terminal when git requested in git repository", () => {
+    it("should create terminal when git requested in git repository", async () => {
       // Since our mock is set to be in a git repository, this should succeed
       const store = useTerminalManagerStore();
 
-      const terminalId = store.createTerminal({
+      const terminalId = await store.createTerminal({
         name: "Git Terminal",
         useGit: true,
       });
@@ -453,10 +468,10 @@ describe("useTerminalManagerStore", () => {
   });
 
   describe("Terminal Name Validation", () => {
-    it("should detect when terminal name is taken", () => {
+    it("should detect when terminal name is taken", async () => {
       const store = useTerminalManagerStore();
 
-      store.createTerminal("Test Terminal");
+      await store.createTerminal("Test Terminal");
 
       expect(store.isTerminalNameTaken("Test Terminal")).toBe(true);
       expect(store.isTerminalNameTaken("test terminal")).toBe(true); // case insensitive
@@ -464,26 +479,22 @@ describe("useTerminalManagerStore", () => {
       expect(store.isTerminalNameTaken("Different Terminal")).toBe(false);
     });
 
-    it("should prevent duplicate terminal names", () => {
+    it("should prevent duplicate terminal names", async () => {
       const store = useTerminalManagerStore();
 
-      store.createTerminal("Duplicate Name");
+      await store.createTerminal("Duplicate Name");
 
-      expect(() => {
-        store.createTerminal("Duplicate Name");
-      }).toThrow('Terminal name "Duplicate Name" is already in use');
+      await expect(store.createTerminal("Duplicate Name")).rejects.toThrow('Terminal name "Duplicate Name" is already in use');
 
-      expect(() => {
-        store.createTerminal("  duplicate name  ");
-      }).toThrow('Terminal name "  duplicate name  " is already in use');
+      await expect(store.createTerminal("  duplicate name  ")).rejects.toThrow('Terminal name "  duplicate name  " is already in use');
     });
   });
 
   describe("Working Directory Support", () => {
-    it("should set working directory when provided", () => {
+    it("should set working directory when provided", async () => {
       const store = useTerminalManagerStore();
 
-      const terminalId = store.createTerminal({
+      const terminalId = await store.createTerminal({
         name: "Terminal With Directory",
         workingDirectory: "/custom/path",
       });
@@ -492,10 +503,10 @@ describe("useTerminalManagerStore", () => {
       expect(terminal?.workingDirectory).toBe("/custom/path");
     });
 
-    it("should work without working directory", () => {
+    it("should work without working directory", async () => {
       const store = useTerminalManagerStore();
 
-      const terminalId = store.createTerminal({
+      const terminalId = await store.createTerminal({
         name: "Terminal Without Directory",
       });
 
@@ -551,7 +562,7 @@ describe("useTerminalManagerStore", () => {
         workingDirectory: "/test/path",
       });
 
-      expect(terminalId).toMatch(/^term_\d+_[a-z0-9]{6}$/);
+      expect(terminalId).toMatch(/^mock-terminal-id-/);
       const terminal = store.getTerminal(terminalId);
       expect(terminal).toBeDefined();
       expect(terminal?.name).toBe("WebSocket Terminal");
@@ -563,7 +574,7 @@ describe("useTerminalManagerStore", () => {
 
       // Create terminals up to the limit
       for (let i = 1; i <= 6; i++) {
-        store.createTerminal(`Terminal ${i}`);
+        await store.createTerminal(`Terminal ${i}`);
       }
 
       // Should throw when trying to create WebSocket terminal beyond limit
@@ -594,7 +605,7 @@ describe("useTerminalManagerStore", () => {
     it("should handle removeTerminalWithCleanup when no connection exists", async () => {
       const store = useTerminalManagerStore();
 
-      const terminalId = store.createTerminal("No Connection Terminal");
+      const terminalId = await store.createTerminal("No Connection Terminal");
 
       // Mock no connection exists (default mock behavior)
       await store.removeTerminalWithCleanup(terminalId);
@@ -742,10 +753,10 @@ describe("useTerminalManagerStore", () => {
       expect(store.activeTerminalId).toBeNull();
     });
 
-    it("should handle setActiveTerminal with previous active terminal being null", () => {
+    it("should handle setActiveTerminal with previous active terminal being null", async () => {
       const store = useTerminalManagerStore();
 
-      const terminalId = store.createTerminal("Test Terminal");
+      const terminalId = await store.createTerminal("Test Terminal");
 
       // Initially no active terminal
       expect(store.activeTerminalId).toBeNull();
@@ -764,11 +775,11 @@ describe("useTerminalManagerStore", () => {
       expect(store.getActiveTerminal).toBeUndefined();
     });
 
-    it("should handle edge case where previous active terminal no longer exists", () => {
+    it("should handle edge case where previous active terminal no longer exists", async () => {
       const store = useTerminalManagerStore();
 
-      const terminal1Id = store.createTerminal("Terminal 1");
-      const terminal2Id = store.createTerminal("Terminal 2");
+      const terminal1Id = await store.createTerminal("Terminal 1");
+      const terminal2Id = await store.createTerminal("Terminal 2");
 
       // Set first terminal as active
       store.setActiveTerminal(terminal1Id);
