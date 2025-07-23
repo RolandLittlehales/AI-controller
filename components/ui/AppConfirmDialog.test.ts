@@ -3,6 +3,7 @@ import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import AppConfirmDialog from "./AppConfirmDialog.vue";
 import AppButton from "./AppButton.vue";
+import AppModal from "./AppModal.vue";
 
 describe("AppConfirmDialog", () => {
   const defaultProps = {
@@ -19,6 +20,10 @@ describe("AppConfirmDialog", () => {
       const wrapper = mount(AppConfirmDialog, {
         props: defaultProps,
         global: {
+          components: {
+            AppButton,
+            AppModal,
+          },
           stubs: {
             teleport: true,
           },
@@ -27,9 +32,10 @@ describe("AppConfirmDialog", () => {
 
       await nextTick();
 
-      expect(wrapper.find(".modal-overlay").exists()).toBe(true);
-      expect(wrapper.find(".modal-title").text()).toBe("Test Title");
-      expect(wrapper.find(".modal-message").text()).toBe("Test message");
+      const modal = wrapper.findComponent(AppModal);
+      expect(modal.exists()).toBe(true);
+      expect(modal.props("title")).toBe("Test Title");
+      expect(wrapper.find(".confirm-message").text()).toBe("Test message");
     });
 
     it("should not render when modelValue is false", async () => {
@@ -39,6 +45,10 @@ describe("AppConfirmDialog", () => {
           modelValue: false,
         },
         global: {
+          components: {
+            AppButton,
+            AppModal,
+          },
           stubs: {
             teleport: true,
           },
@@ -47,7 +57,8 @@ describe("AppConfirmDialog", () => {
 
       await nextTick();
 
-      expect(wrapper.find(".modal-overlay").exists()).toBe(false);
+      const modal = wrapper.findComponent(AppModal);
+      expect(modal.props("modelValue")).toBe(false);
     });
 
     it("should render with default props", async () => {
@@ -56,6 +67,10 @@ describe("AppConfirmDialog", () => {
           modelValue: true,
         },
         global: {
+          components: {
+            AppButton,
+            AppModal,
+          },
           stubs: {
             teleport: true,
           },
@@ -64,8 +79,9 @@ describe("AppConfirmDialog", () => {
 
       await nextTick();
 
-      expect(wrapper.find(".modal-title").text()).toBe("Confirm Action");
-      expect(wrapper.find(".modal-message").text()).toBe("Are you sure you want to proceed?");
+      const modal = wrapper.findComponent(AppModal);
+      expect(modal.props("title")).toBe("Confirm Action");
+      expect(wrapper.find(".confirm-message").text()).toBe("Are you sure you want to proceed?");
 
       const buttons = wrapper.findAllComponents(AppButton);
       expect(buttons[0]?.text()).toBe("Cancel");
@@ -79,6 +95,10 @@ describe("AppConfirmDialog", () => {
           confirmVariant: "danger",
         },
         global: {
+          components: {
+            AppButton,
+            AppModal,
+          },
           stubs: {
             teleport: true,
           },
@@ -97,6 +117,10 @@ describe("AppConfirmDialog", () => {
       const wrapper = mount(AppConfirmDialog, {
         props: defaultProps,
         global: {
+          components: {
+            AppButton,
+            AppModal,
+          },
           stubs: {
             teleport: true,
           },
@@ -117,6 +141,10 @@ describe("AppConfirmDialog", () => {
       const wrapper = mount(AppConfirmDialog, {
         props: defaultProps,
         global: {
+          components: {
+            AppButton,
+            AppModal,
+          },
           stubs: {
             teleport: true,
           },
@@ -137,6 +165,10 @@ describe("AppConfirmDialog", () => {
       const wrapper = mount(AppConfirmDialog, {
         props: defaultProps,
         global: {
+          components: {
+            AppButton,
+            AppModal,
+          },
           stubs: {
             teleport: true,
           },
@@ -155,6 +187,10 @@ describe("AppConfirmDialog", () => {
       const wrapper = mount(AppConfirmDialog, {
         props: defaultProps,
         global: {
+          components: {
+            AppButton,
+            AppModal,
+          },
           stubs: {
             teleport: true,
           },
@@ -178,6 +214,10 @@ describe("AppConfirmDialog", () => {
           modelValue: false,
         },
         global: {
+          components: {
+            AppButton,
+            AppModal,
+          },
           stubs: {
             teleport: true,
           },
@@ -186,19 +226,24 @@ describe("AppConfirmDialog", () => {
 
       await nextTick();
 
-      expect(wrapper.find(".modal-overlay").exists()).toBe(false);
+      const modal = wrapper.findComponent(AppModal);
+      expect(modal.props("modelValue")).toBe(false);
 
       await wrapper.setProps({ modelValue: true });
-      expect(wrapper.find(".modal-overlay").exists()).toBe(true);
+      expect(modal.props("modelValue")).toBe(true);
 
       await wrapper.setProps({ modelValue: false });
-      expect(wrapper.find(".modal-overlay").exists()).toBe(false);
+      expect(modal.props("modelValue")).toBe(false);
     });
 
     it("should update content when props change", async () => {
       const wrapper = mount(AppConfirmDialog, {
         props: defaultProps,
         global: {
+          components: {
+            AppButton,
+            AppModal,
+          },
           stubs: {
             teleport: true,
           },
@@ -212,8 +257,9 @@ describe("AppConfirmDialog", () => {
         message: "Updated message",
       });
 
-      expect(wrapper.find(".modal-title").text()).toBe("Updated Title");
-      expect(wrapper.find(".modal-message").text()).toBe("Updated message");
+      const modal = wrapper.findComponent(AppModal);
+      expect(modal.props("title")).toBe("Updated Title");
+      expect(wrapper.find(".confirm-message").text()).toBe("Updated message");
     });
   });
 });

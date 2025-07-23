@@ -104,6 +104,49 @@
             <AppButton variant="primary" size="sm" block>Block Button</AppButton>
           </div>
         </section>
+
+        <!-- Modal Component Demo -->
+        <section class="test-card modals-demo">
+          <h3>Modal Components</h3>
+
+          <!-- Modal Sizes -->
+          <div class="buttons-container">
+            <h4>Modal Sizes</h4>
+            <AppButton
+              v-for="size in MODAL_SIZES"
+              :key="`modal-${size.value}`"
+              variant="secondary"
+              size="sm"
+              @click="showModal(size.value)"
+            >
+              {{ size.label }}
+            </AppButton>
+          </div>
+
+          <!-- Confirm Dialog -->
+          <div class="buttons-container">
+            <h4>Confirm Dialog</h4>
+            <AppButton
+              variant="danger"
+              size="sm"
+              @click="showConfirmDialog = true"
+            >
+              Show Confirm Dialog
+            </AppButton>
+          </div>
+
+          <!-- Modal with Icons -->
+          <div class="buttons-container">
+            <h4>Modal with Icon</h4>
+            <AppButton
+              variant="primary"
+              size="sm"
+              @click="showIconModal = true"
+            >
+              Show Icon Modal
+            </AppButton>
+          </div>
+        </section>
       </div>
 
       <section class="test-card colors-demo">
@@ -142,14 +185,64 @@
         </div>
       </section>
     </main>
+
+    <!-- Modal Demos -->
+    <AppModal
+      v-for="size in MODAL_SIZES"
+      :key="`modal-instance-${size.value}`"
+      v-model="modalStates[size.value]"
+      :title="`${size.label} Modal`"
+      :size="size.value"
+    >
+      <p>This is a {{ size.label.toLowerCase() }} modal. It demonstrates the {{ size.value }} size variant.</p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+
+      <template #footer>
+        <AppButton variant="secondary" @click="modalStates[size.value] = false">
+          Cancel
+        </AppButton>
+        <AppButton variant="primary" @click="modalStates[size.value] = false">
+          Save Changes
+        </AppButton>
+      </template>
+    </AppModal>
+
+    <!-- Icon Modal -->
+    <AppModal
+      v-model="showIconModal"
+      title="Success!"
+      icon="✅"
+      size="sm"
+    >
+      <p>Your changes have been saved successfully.</p>
+
+      <template #footer>
+        <AppButton variant="primary" @click="showIconModal = false">
+          Got it
+        </AppButton>
+      </template>
+    </AppModal>
+
+    <!-- Confirm Dialog -->
+    <AppConfirmDialog
+      v-model="showConfirmDialog"
+      title="Delete Item"
+      message="Are you sure you want to delete this item? This action cannot be undone."
+      confirm-text="Delete"
+      confirm-variant="danger"
+      @confirm="handleConfirmDelete"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, reactive } from "vue";
 import Terminal from "~/components/Terminal.vue";
 import TerminalSidebar from "~/components/terminal/TerminalSidebar.vue";
 import TerminalDisplay from "~/components/terminal/TerminalDisplay.vue";
 import AppButton from "~/components/ui/AppButton.vue";
+import AppModal from "~/components/ui/AppModal.vue";
+import AppConfirmDialog from "~/components/ui/AppConfirmDialog.vue";
 
 // Constants
 const COLOR_SHADES = ["50", "100", "200", "400", "600", "700", "800", "900"] as const;
@@ -179,6 +272,35 @@ const ICON_ONLY_BUTTONS = [
   { icon: "i-heroicons-cog-6-tooth", variant: "primary", size: "md" },
   { icon: "i-heroicons-trash", variant: "danger", size: "lg" },
 ] as const;
+
+const MODAL_SIZES = [
+  { value: "sm", label: "Small" },
+  { value: "md", label: "Medium" },
+  { value: "lg", label: "Large" },
+  { value: "xl", label: "Extra Large" },
+  { value: "fullscreen", label: "Fullscreen" },
+] as const;
+
+// Modal states
+const modalStates = reactive({
+  sm: false,
+  md: false,
+  lg: false,
+  xl: false,
+  fullscreen: false,
+});
+
+const showIconModal = ref(false);
+const showConfirmDialog = ref(false);
+
+// Methods
+const showModal = (size: string): void => {
+  modalStates[size as keyof typeof modalStates] = true;
+};
+
+const handleConfirmDelete = (): void => {
+  // Handle delete action
+};
 </script>
 
 <style scoped>
