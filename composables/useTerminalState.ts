@@ -27,8 +27,8 @@ export function useTerminalState() {
 
   const hasTerminalId = computed(() => Boolean(_terminalId.value));
 
-  const displayTerminalId = computed(() => {
-    return _terminalId.value ? _terminalId.value.slice(0, 8) : "";
+  const displayTerminalId = computed<string>(() => {
+    return _terminalId.value ? (_terminalId.value.split("-")[0] || "") : "";
   });
 
   // State mutation methods

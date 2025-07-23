@@ -88,16 +88,22 @@ describe("useTerminalState", () => {
 
     test.each([
       {
-        description: "should generate display terminal ID correctly",
-        terminalId: "very-long-terminal-id-123456789",
-        expectedDisplayId: "very-lon",
+        description: "should extract first segment of UUID",
+        terminalId: "550e8400-e29b-41d4-a716-446655440000",
+        expectedDisplayId: "550e8400",
         expectedLength: 8,
       },
       {
-        description: "should handle short terminal ID",
-        terminalId: "abc",
-        expectedDisplayId: "abc",
-        expectedLength: 3,
+        description: "should handle terminal ID without dashes",
+        terminalId: "abc123",
+        expectedDisplayId: "abc123",
+        expectedLength: 6,
+      },
+      {
+        description: "should handle empty segments gracefully",
+        terminalId: "-e29b-41d4",
+        expectedDisplayId: "",
+        expectedLength: 0,
       },
     ])("$description", ({ terminalId, expectedDisplayId, expectedLength }: { terminalId: string; expectedDisplayId: string; expectedLength: number }) => {
       state.setTerminalId(terminalId);

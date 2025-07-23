@@ -62,7 +62,7 @@ describe("XTerminalInstance", () => {
     vi.clearAllMocks();
 
     mockTerminal = {
-      id: "term_123456_abcdef",
+      id: "550e8400-e29b-41d4-a716-446655440000",
       name: "Test Terminal",
       status: "connected",
       isActive: true,
@@ -71,7 +71,7 @@ describe("XTerminalInstance", () => {
       git: {
         hasWorktree: true,
         branchName: "feature/test",
-        worktreePath: "/home/user/project/.worktrees/term_123456_abcdef",
+        worktreePath: "/home/user/project/.worktrees/550e8400-e29b-41d4-a716-446655440000",
         isTemporary: false,
       },
     };
@@ -83,7 +83,7 @@ describe("XTerminalInstance", () => {
     });
 
     expect(wrapper.find(".terminal-title").text()).toBe("Test Terminal");
-    expect(wrapper.find(".terminal-id").text()).toBe("term_123");
+    expect(wrapper.find(".terminal-id").text()).toBe("550e8400");
     expect(wrapper.find(".branch-info").text()).toBe("📋 feature/test");
     expect(wrapper.find(".working-dir").text()).toBe("📁 /home/user/project");
   });
@@ -126,7 +126,7 @@ describe("XTerminalInstance", () => {
     expect(buttons[1]?.text()).toContain("Close");
   });
 
-  it("should emit remove event when close button clicked", async () => {
+  it("should show confirmation dialog when close button clicked", async () => {
     const wrapper = mount(XTerminalInstance, {
       props: { terminal: mockTerminal },
     });
@@ -134,7 +134,10 @@ describe("XTerminalInstance", () => {
     const closeButton = wrapper.findAllComponents({ name: "AppButton" })[1];
     await closeButton?.trigger("click");
 
-    expect(wrapper.emitted("remove")).toHaveLength(1);
+    // Should show confirmation dialog instead of immediately emitting remove
+    const confirmDialog = wrapper.findComponent({ name: "AppConfirmDialog" });
+    expect(confirmDialog.exists()).toBe(true);
+    expect(confirmDialog.props("modelValue")).toBe(true);
   });
 
   it("should call reconnect when reconnect button clicked", async () => {
@@ -145,7 +148,7 @@ describe("XTerminalInstance", () => {
     const reconnectButton = wrapper.findAllComponents({ name: "AppButton" })[0];
     await reconnectButton?.trigger("click");
 
-    expect(mockTerminalStore.webSocketManager.getConnection).toHaveBeenCalledWith("term_123456_abcdef");
+    expect(mockTerminalStore.webSocketManager.getConnection).toHaveBeenCalledWith("550e8400-e29b-41d4-a716-446655440000");
   });
 
   it("should show disconnected overlay when status is disconnected", () => {

@@ -4,7 +4,7 @@
       <div class="terminal-info">
         <h4 class="terminal-title">{{ terminal.name }}</h4>
         <div class="terminal-meta">
-          <span class="terminal-id">{{ terminal.id.slice(0, 8) }}</span>
+          <span class="terminal-id">{{ terminal.id.split('-')[0] }}</span>
           <span
             class="connection-status"
             :class="`status-${connectionStatus}`"
@@ -37,7 +37,7 @@
           size="sm"
           variant="danger"
           title="Close terminal"
-          @click="$emit('remove')"
+          @click="showRemoveConfirmDialog = true"
         >
           Close
         </AppButton>
@@ -51,7 +51,7 @@
     />
 
     <!-- Connection overlay for disconnected state -->
-    <div v-if="connectionStatus === 'disconnected'" class="connection-overlay">
+    <div v-if="connectionStatus === 'disconnected' && showDisconnectedModal" class="connection-overlay">
       <div class="overlay-content">
         <div class="overlay-body">
           <div class="overlay-icon">🔌</div>
@@ -59,14 +59,14 @@
           <p>The terminal connection has been lost.</p>
         </div>
         <div class="overlay-footer">
-          <AppButton variant="secondary" @click="$emit('remove')">Close</AppButton>
+          <AppButton variant="secondary" @click="showDisconnectedModal = false">Close</AppButton>
           <AppButton variant="primary" @click="reconnect">Reconnect</AppButton>
         </div>
       </div>
     </div>
 
     <!-- Error overlay -->
-    <div v-if="connectionStatus === 'error'" class="connection-overlay error">
+    <div v-if="connectionStatus === 'error' && showErrorModal" class="connection-overlay error">
       <div class="overlay-content">
         <div class="overlay-body">
           <div class="overlay-icon">⚠️</div>
@@ -74,11 +74,21 @@
           <p>Failed to connect to terminal.</p>
         </div>
         <div class="overlay-footer">
-          <AppButton variant="secondary" @click="$emit('remove')">Close</AppButton>
+          <AppButton variant="secondary" @click="showErrorModal = false">Close</AppButton>
           <AppButton variant="primary" @click="reconnect">Try Again</AppButton>
         </div>
       </div>
     </div>
+
+    <!-- Confirmation Dialog -->
+    <AppConfirmDialog
+      v-model="showRemoveConfirmDialog"
+      title="Close Terminal"
+      message="Are you sure you want to close this terminal?"
+      confirm-text="Close"
+      confirm-variant="danger"
+      @confirm="$emit('remove')"
+    />
   </div>
 </template>
 
@@ -88,6 +98,7 @@ import type { BasicTerminal } from "~/stores/terminalManager";
 import { useTerminalManagerStore } from "~/stores/terminalManager";
 import { logger } from "~/utils/logger";
 import AppButton from "~/components/ui/AppButton.vue";
+import AppConfirmDialog from "~/components/ui/AppConfirmDialog.vue";
 
 // Dynamic imports for xterm.js to avoid SSR issues
 let Terminal: typeof import("@xterm/xterm").Terminal | null = null;
@@ -118,6 +129,11 @@ let fitAddon: import("@xterm/addon-fit").FitAddon | null = null;
 
 // Connection status from WebSocket manager - start with connecting since terminal is being created
 const connectionStatus = ref<"connecting" | "connected" | "disconnected" | "error">("connecting");
+
+// Separate state for showing/hiding modal overlays
+const showDisconnectedModal = ref(true);
+const showErrorModal = ref(true);
+const showRemoveConfirmDialog = ref(false);
 
 /**
  * Initialize xterm.js libraries dynamically
@@ -245,6 +261,9 @@ const cleanupTerminal = (): void => {
 const reconnect = async (): Promise<void> => {
   try {
     connectionStatus.value = "connecting";
+    // Reset modal visibility when attempting to reconnect
+    showDisconnectedModal.value = true;
+    showErrorModal.value = true;
 
     const connection = terminalStore.webSocketManager.getConnection(props.terminal.id);
     if (connection) {
@@ -315,6 +334,12 @@ watch(
   },
   (newStatus) => {
     connectionStatus.value = newStatus;
+
+    // Reset modal visibility when connection is restored
+    if (newStatus === "connected") {
+      showDisconnectedModal.value = true;
+      showErrorModal.value = true;
+    }
   },
   { immediate: true },
 );

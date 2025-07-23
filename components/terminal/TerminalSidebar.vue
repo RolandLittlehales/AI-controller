@@ -41,7 +41,7 @@
         </div>
 
         <div class="terminal-meta">
-          <span class="terminal-id">{{ terminal.id.slice(0, 8) }}</span>
+          <span class="terminal-id">{{ terminal.id.split('-')[0] }}</span>
           <span class="created-time">{{ formatTime(terminal.createdAt) }}</span>
           <span v-if="terminal.git?.hasWorktree" class="git-info" :title="`Git: ${terminal.git.branchName}`">
             🌿 {{ terminal.git.branchName }}
@@ -62,6 +62,16 @@
       v-model="showCreateModal"
       @terminal-created="handleTerminalCreated"
     />
+
+    <!-- Confirmation Dialog -->
+    <AppConfirmDialog
+      v-model="showConfirmDialog"
+      title="Remove Terminal"
+      :message="`Are you sure you want to remove this terminal?`"
+      confirm-text="Remove"
+      confirm-variant="danger"
+      @confirm="confirmRemoveTerminal"
+    />
   </div>
 </template>
 
@@ -71,6 +81,7 @@ import { useTerminalManagerStore } from "~/stores/terminalManager";
 import ResourceMonitor from "./ResourceMonitor.vue";
 import CreateTerminalModal from "./CreateTerminalModal.vue";
 import AppButton from "~/components/ui/AppButton.vue";
+import AppConfirmDialog from "~/components/ui/AppConfirmDialog.vue";
 
 /**
  * Terminal Sidebar Component
@@ -87,6 +98,8 @@ const terminalStore = useTerminalManagerStore();
 
 // Local state
 const showCreateModal = ref(false);
+const showConfirmDialog = ref(false);
+const terminalToRemove = ref<string | null>(null);
 
 // Computed properties
 const terminalList = computed(() => Array.from(terminalStore.getAllTerminals));
@@ -119,9 +132,18 @@ const removeTerminal = (terminalId: string): void => {
   const terminal = terminalStore.getTerminal(terminalId);
   if (!terminal) return;
 
-  // In the future, we might want to add a confirmation dialog for active terminals
-  // For now, allow immediate removal
-  terminalStore.removeTerminal(terminalId);
+  terminalToRemove.value = terminalId;
+  showConfirmDialog.value = true;
+};
+
+/**
+ * Confirm terminal removal
+ */
+const confirmRemoveTerminal = (): void => {
+  if (terminalToRemove.value) {
+    terminalStore.removeTerminal(terminalToRemove.value);
+    terminalToRemove.value = null;
+  }
 };
 
 /**

@@ -27,6 +27,15 @@
 
 AI-controller is a Nuxt 3 web application for managing multiple terminal-based AI instances. 
 
+**🎯 Critical Use Case:** This is a **local development tool** that individual developers run on their own computers - NOT a multi-user service or production application. This context is essential for all design decisions.
+
+**Key Implications:**
+- **Single-user environment** - No authentication/authorization needed
+- **Local-only access** - No rate limiting or DOS protection required  
+- **Developer-controlled** - User has full control over their environment
+- **HTTP is acceptable** - No strict HTTPS requirement for local dev
+- **Race conditions unlikely** - No concurrent users competing for resources
+
 **Current Phase:** Phase 2A - Git Integration (client-side validation)  
 **Implementation Plan:** `docs/architecture/multi-terminal-implementation.md`  
 **Architecture:** Component-based frontend + Nitro backend + WebSocket terminals
