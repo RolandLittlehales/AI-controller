@@ -206,3 +206,5 @@ firefox-*.tar.bz2
 
 # Application settings (runtime generated)
 settings/
+settings/ui-settings.json
+settings/terminal-states.json
