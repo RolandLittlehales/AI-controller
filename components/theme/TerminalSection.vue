@@ -5,11 +5,11 @@
       The terminal maintains its dark appearance for optimal readability in both themes.
     </p>
     <div class="terminal-wrapper">
-      <Terminal :auto-connect="false" />
+      <TerminalDisplay />
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import Terminal from "~/components/Terminal.vue";
+import TerminalDisplay from "~/components/terminal/TerminalDisplay.vue";
 </script>

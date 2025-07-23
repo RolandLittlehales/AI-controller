@@ -164,13 +164,6 @@
         </div>
       </section>
 
-      <section class="test-card terminal-demo">
-        <h3>Terminal Component</h3>
-        <div class="terminal-showcase">
-          <Terminal :auto-connect="false" />
-        </div>
-      </section>
-
       <section class="test-card terminal-sidebar-demo">
         <h3>Terminal Sidebar Component</h3>
         <div class="terminal-sidebar-showcase">
@@ -237,7 +230,6 @@
 
 <script setup lang="ts">
 import { ref, reactive } from "vue";
-import Terminal from "~/components/Terminal.vue";
 import TerminalSidebar from "~/components/terminal/TerminalSidebar.vue";
 import TerminalDisplay from "~/components/terminal/TerminalDisplay.vue";
 import AppButton from "~/components/ui/AppButton.vue";
@@ -483,11 +475,6 @@ const handleConfirmDelete = (): void => {
 .color-700 { background: var(--color-lavender-700); color: var(--color-text-on-primary); }
 .color-800 { background: var(--color-lavender-800); color: var(--color-text-on-primary); }
 .color-900 { background: var(--color-lavender-900); color: var(--color-text-on-primary); }
-
-/* Terminal Demo */
-.terminal-showcase {
-  height: 400px;
-}
 
 /* Terminal Sidebar Demo */
 .terminal-sidebar-showcase {
