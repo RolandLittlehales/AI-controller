@@ -59,18 +59,18 @@ watchEffect(() => {
 <style scoped>
 .startup-indicator {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background-color: var(--ui-bg-elevated);
-  border: 1px solid var(--ui-border-secondary);
-  border-radius: 6px;
-  padding: 8px 16px;
+  bottom: var(--spacing-lg);
+  right: var(--spacing-lg);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: var(--ui-text-secondary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  box-shadow: var(--shadow-md);
   z-index: 50;
 }
 

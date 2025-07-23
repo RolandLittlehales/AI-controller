@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { watch, onMounted } from "vue";
 import { useThemeSettings } from "~/composables/useSettings";
+import AppSidebar from "~/components/ui/AppSidebar.vue";
 
 const { isDarkMode } = useThemeSettings();
 
@@ -22,7 +23,31 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="full-height">
-    <slot />
+  <div class="layout-container">
+    <AppSidebar />
+    <div class="main-content">
+      <slot />
+    </div>
   </div>
 </template>
+
+<style scoped>
+.layout-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 48px; /* Default collapsed sidebar width */
+  transition: margin-left 0.3s ease;
+  overflow: auto;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0; /* No margin on mobile, sidebar will overlay */
+  }
+}
+</style>
